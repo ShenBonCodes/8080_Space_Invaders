@@ -2,20 +2,20 @@
 
 int main(int argc, int** argv)
 {
-	FILE *file = fopen(argv[1] "rb");
+	FILE *file = fopen(argv[1], "rb");
 	if (file == NULL)
 	{
 		printf("error: Couldn't open %s\n", argv[1]);    
           	exit(1);
 	}
 
-	fseek(f, 0L, SEEK_END);
+	fseek(file, 0L, SEEK_END);
 	int fsize = ftell(file);
-	fseek(f, 0L, SEEK_SET);
+	fseek(file, 0L, SEEK_SET);
 
 	unsigned char *buffer = malloc(fsize);
 
-	fread(buffer, fsize, 1, f);
+	fread(buffer, fsize, 1, file);
 	fclose(file);
 
 	int pc = 0; // program counter
@@ -28,271 +28,258 @@ int main(int argc, int** argv)
 	return 0;
 }
 
-int Dissasembler8080p(unsinged char *buffer, int pc)
+int Dissasembler8080p(unsigned char *buffer, int pc)
 {
 	unsigned char* codeLine = &buffer[pc];
 	int opbytes = 0; // size in bytes of operation
-	printf("%04x", pc); // printing out byte # in buffer to 4 digit number
+	printf("%04x ", pc); // printing out byte # in buffer to 4 digit number
 			    
 	switch (*codeLine) 
 	{
-		case 0x00: break;
-		0x00	NOP	1		
-		0x01	LXI B,D16	3		B <- byte 3, C <- byte 2
-		0x02	STAX B	1		(BC) <- A
-		0x03	INX B	1		BC <- BC+1
-0x04	INR B	1	Z, S, P, AC	B <- B+1
-0x05	DCR B	1	Z, S, P, AC	B <- B-1
-0x06	MVI B, D8	2		B <- byte 2
-0x07	RLC	1	CY	A = A << 1; bit 0 = prev bit 7; CY = prev bit 7
-0x08	-			
-0x09	DAD B	1	CY	HL = HL + BC
-0x0a	LDAX B	1		A <- (BC)
-0x0b	DCX B	1		BC = BC-1
-0x0c	INR C	1	Z, S, P, AC	C <- C+1
-0x0d	DCR C	1	Z, S, P, AC	C <-C-1
-0x0e	MVI C,D8	2		C <- byte 2
-0x0f	RRC	1	CY	A = A >> 1; bit 7 = prev bit 0; CY = prev bit 0
-0x10	-			
-0x11	LXI D,D16	3		D <- byte 3, E <- byte 2
-0x12	STAX D	1		(DE) <- A
-0x13	INX D	1		DE <- DE + 1
-0x14	INR D	1	Z, S, P, AC	D <- D+1
-0x15	DCR D	1	Z, S, P, AC	D <- D-1
-0x16	MVI D, D8	2		D <- byte 2
-0x17	RAL	1	CY	A = A << 1; bit 0 = prev CY; CY = prev bit 7
-0x18	-			
-0x19	DAD D	1	CY	HL = HL + DE
-0x1a	LDAX D	1		A <- (DE)
-0x1b	DCX D	1		DE = DE-1
-0x1c	INR E	1	Z, S, P, AC	E <-E+1
-0x1d	DCR E	1	Z, S, P, AC	E <- E-1
-0x1e	MVI E,D8	2		E <- byte 2
-0x1f	RAR	1	CY	A = A >> 1; bit 7 = prev bit 7; CY = prev bit 0
-0x20	-			
-0x21	LXI H,D16	3		H <- byte 3, L <- byte 2
-0x22	SHLD adr	3		(adr) <-L; (adr+1)<-H
-0x23	INX H	1		HL <- HL + 1
-0x24	INR H	1	Z, S, P, AC	H <- H+1
-0x25	DCR H	1	Z, S, P, AC	H <- H-1
-0x26	MVI H,D8	2		H <- byte 2
-0x27	DAA	1		special
-0x28	-			
-0x29	DAD H	1	CY	HL = HL + HI
-0x2a	LHLD adr	3		L <- (adr); H<-(adr+1)
-0x2b	DCX H	1		HL = HL-1
-0x2c	INR L	1	Z, S, P, AC	L <- L+1
-0x2d	DCR L	1	Z, S, P, AC	L <- L-1
-0x2e	MVI L, D8	2		L <- byte 2
-0x2f	CMA	1		A <- !A
-0x30	-			
-0x31	LXI SP, D16	3		SP.hi <- byte 3, SP.lo <- byte 2
-0x32	STA adr	3		(adr) <- A
-0x33	INX SP	1		SP = SP + 1
-0x34	INR M	1	Z, S, P, AC	(HL) <- (HL)+1
-0x35	DCR M	1	Z, S, P, AC	(HL) <- (HL)-1
-0x36	MVI M,D8	2		(HL) <- byte 2
-0x37	STC	1	CY	CY = 1
-0x38	-			
-0x39	DAD SP	1	CY	HL = HL + SP
-0x3a	LDA adr	3		A <- (adr)
-0x3b	DCX SP	1		SP = SP-1
-0x3c	INR A	1	Z, S, P, AC	A <- A+1
-0x3d	DCR A	1	Z, S, P, AC	A <- A-1
-0x3e	MVI A,D8	2		A <- byte 2
-0x3f	CMC	1	CY	CY=!CY
-0x40	MOV B,B	1		B <- B
-0x41	MOV B,C	1		B <- C
-0x42	MOV B,D	1		B <- D
-0x43	MOV B,E	1		B <- E
-0x44	MOV B,H	1		B <- H
-0x45	MOV B,L	1		B <- L
-0x46	MOV B,M	1		B <- (HL)
-0x47	MOV B,A	1		B <- A
-0x48	MOV C,B	1		C <- B
-0x49	MOV C,C	1		C <- C
-0x4a	MOV C,D	1		C <- D
-0x4b	MOV C,E	1		C <- E
-0x4c	MOV C,H	1		C <- H
-0x4d	MOV C,L	1		C <- L
-0x4e	MOV C,M	1		C <- (HL)
-0x4f	MOV C,A	1		C <- A
-0x50	MOV D,B	1		D <- B
-0x51	MOV D,C	1		D <- C
-0x52	MOV D,D	1		D <- D
-0x53	MOV D,E	1		D <- E
-0x54	MOV D,H	1		D <- H
-0x55	MOV D,L	1		D <- L
-0x56	MOV D,M	1		D <- (HL)
-0x57	MOV D,A	1		D <- A
-0x58	MOV E,B	1		E <- B
-0x59	MOV E,C	1		E <- C
-0x5a	MOV E,D	1		E <- D
-0x5b	MOV E,E	1		E <- E
-0x5c	MOV E,H	1		E <- H
-0x5d	MOV E,L	1		E <- L
-0x5e	MOV E,M	1		E <- (HL)
-0x5f	MOV E,A	1		E <- A
-0x60	MOV H,B	1		H <- B
-0x61	MOV H,C	1		H <- C
-0x62	MOV H,D	1		H <- D
-0x63	MOV H,E	1		H <- E
-0x64	MOV H,H	1		H <- H
-0x65	MOV H,L	1		H <- L
-0x66	MOV H,M	1		H <- (HL)
-0x67	MOV H,A	1		H <- A
-0x68	MOV L,B	1		L <- B
-0x69	MOV L,C	1		L <- C
-0x6a	MOV L,D	1		L <- D
-0x6b	MOV L,E	1		L <- E
-0x6c	MOV L,H	1		L <- H
-0x6d	MOV L,L	1		L <- L
-0x6e	MOV L,M	1		L <- (HL)
-0x6f	MOV L,A	1		L <- A
-0x70	MOV M,B	1		(HL) <- B
-0x71	MOV M,C	1		(HL) <- C
-0x72	MOV M,D	1		(HL) <- D
-0x73	MOV M,E	1		(HL) <- E
-0x74	MOV M,H	1		(HL) <- H
-0x75	MOV M,L	1		(HL) <- L
-0x76	HLT	1		special
-0x77	MOV M,A	1		(HL) <- A
-0x78	MOV A,B	1		A <- B
-0x79	MOV A,C	1		A <- C
-0x7a	MOV A,D	1		A <- D
-0x7b	MOV A,E	1		A <- E
-0x7c	MOV A,H	1		A <- H
-0x7d	MOV A,L	1		A <- L
-0x7e	MOV A,M	1		A <- (HL)
-0x7f	MOV A,A	1		A <- A
-0x80	ADD B	1	Z, S, P, CY, AC	A <- A + B
-0x81	ADD C	1	Z, S, P, CY, AC	A <- A + C
-0x82	ADD D	1	Z, S, P, CY, AC	A <- A + D
-0x83	ADD E	1	Z, S, P, CY, AC	A <- A + E
-0x84	ADD H	1	Z, S, P, CY, AC	A <- A + H
-0x85	ADD L	1	Z, S, P, CY, AC	A <- A + L
-0x86	ADD M	1	Z, S, P, CY, AC	A <- A + (HL)
-0x87	ADD A	1	Z, S, P, CY, AC	A <- A + A
-0x88	ADC B	1	Z, S, P, CY, AC	A <- A + B + CY
-0x89	ADC C	1	Z, S, P, CY, AC	A <- A + C + CY
-0x8a	ADC D	1	Z, S, P, CY, AC	A <- A + D + CY
-0x8b	ADC E	1	Z, S, P, CY, AC	A <- A + E + CY
-0x8c	ADC H	1	Z, S, P, CY, AC	A <- A + H + CY
-0x8d	ADC L	1	Z, S, P, CY, AC	A <- A + L + CY
-0x8e	ADC M	1	Z, S, P, CY, AC	A <- A + (HL) + CY
-0x8f	ADC A	1	Z, S, P, CY, AC	A <- A + A + CY
-0x90	SUB B	1	Z, S, P, CY, AC	A <- A - B
-0x91	SUB C	1	Z, S, P, CY, AC	A <- A - C
-0x92	SUB D	1	Z, S, P, CY, AC	A <- A + D
-0x93	SUB E	1	Z, S, P, CY, AC	A <- A - E
-0x94	SUB H	1	Z, S, P, CY, AC	A <- A + H
-0x95	SUB L	1	Z, S, P, CY, AC	A <- A - L
-0x96	SUB M	1	Z, S, P, CY, AC	A <- A + (HL)
-0x97	SUB A	1	Z, S, P, CY, AC	A <- A - A
-0x98	SBB B	1	Z, S, P, CY, AC	A <- A - B - CY
-0x99	SBB C	1	Z, S, P, CY, AC	A <- A - C - CY
-0x9a	SBB D	1	Z, S, P, CY, AC	A <- A - D - CY
-0x9b	SBB E	1	Z, S, P, CY, AC	A <- A - E - CY
-0x9c	SBB H	1	Z, S, P, CY, AC	A <- A - H - CY
-0x9d	SBB L	1	Z, S, P, CY, AC	A <- A - L - CY
-0x9e	SBB M	1	Z, S, P, CY, AC	A <- A - (HL) - CY
-0x9f	SBB A	1	Z, S, P, CY, AC	A <- A - A - CY
-0xa0	ANA B	1	Z, S, P, CY, AC	A <- A & B
-0xa1	ANA C	1	Z, S, P, CY, AC	A <- A & C
-0xa2	ANA D	1	Z, S, P, CY, AC	A <- A & D
-0xa3	ANA E	1	Z, S, P, CY, AC	A <- A & E
-0xa4	ANA H	1	Z, S, P, CY, AC	A <- A & H
-0xa5	ANA L	1	Z, S, P, CY, AC	A <- A & L
-0xa6	ANA M	1	Z, S, P, CY, AC	A <- A & (HL)
-0xa7	ANA A	1	Z, S, P, CY, AC	A <- A & A
-0xa8	XRA B	1	Z, S, P, CY, AC	A <- A ^ B
-0xa9	XRA C	1	Z, S, P, CY, AC	A <- A ^ C
-0xaa	XRA D	1	Z, S, P, CY, AC	A <- A ^ D
-0xab	XRA E	1	Z, S, P, CY, AC	A <- A ^ E
-0xac	XRA H	1	Z, S, P, CY, AC	A <- A ^ H
-0xad	XRA L	1	Z, S, P, CY, AC	A <- A ^ L
-0xae	XRA M	1	Z, S, P, CY, AC	A <- A ^ (HL)
-0xaf	XRA A	1	Z, S, P, CY, AC	A <- A ^ A
-0xb0	ORA B	1	Z, S, P, CY, AC	A <- A | B
-0xb1	ORA C	1	Z, S, P, CY, AC	A <- A | C
-0xb2	ORA D	1	Z, S, P, CY, AC	A <- A | D
-0xb3	ORA E	1	Z, S, P, CY, AC	A <- A | E
-0xb4	ORA H	1	Z, S, P, CY, AC	A <- A | H
-0xb5	ORA L	1	Z, S, P, CY, AC	A <- A | L
-0xb6	ORA M	1	Z, S, P, CY, AC	A <- A | (HL)
-0xb7	ORA A	1	Z, S, P, CY, AC	A <- A | A
-0xb8	CMP B	1	Z, S, P, CY, AC	A - B
-0xb9	CMP C	1	Z, S, P, CY, AC	A - C
-0xba	CMP D	1	Z, S, P, CY, AC	A - D
-0xbb	CMP E	1	Z, S, P, CY, AC	A - E
-0xbc	CMP H	1	Z, S, P, CY, AC	A - H
-0xbd	CMP L	1	Z, S, P, CY, AC	A - L
-0xbe	CMP M	1	Z, S, P, CY, AC	A - (HL)
-0xbf	CMP A	1	Z, S, P, CY, AC	A - A
-0xc0	RNZ	1		if NZ, RET
-0xc1	POP B	1		C <- (sp); B <- (sp+1); sp <- sp+2
-0xc2	JNZ adr	3		if NZ, PC <- adr
-0xc3	JMP adr	3		PC <= adr
-0xc4	CNZ adr	3		if NZ, CALL adr
-0xc5	PUSH B	1		(sp-2)<-C; (sp-1)<-B; sp <- sp - 2
-0xc6	ADI D8	2	Z, S, P, CY, AC	A <- A + byte
-0xc7	RST 0	1		CALL $0
-0xc8	RZ	1		if Z, RET
-0xc9	RET	1		PC.lo <- (sp); PC.hi<-(sp+1); SP <- SP+2
-0xca	JZ adr	3		if Z, PC <- adr
-0xcb	-			
-0xcc	CZ adr	3		if Z, CALL adr
-0xcd	CALL adr	3		(SP-1)<-PC.hi;(SP-2)<-PC.lo;SP<-SP-2;PC=adr
-0xce	ACI D8	2	Z, S, P, CY, AC	A <- A + data + CY
-0xcf	RST 1	1		CALL $8
-0xd0	RNC	1		if NCY, RET
-0xd1	POP D	1		E <- (sp); D <- (sp+1); sp <- sp+2
-0xd2	JNC adr	3		if NCY, PC<-adr
-0xd3	OUT D8	2		special
-0xd4	CNC adr	3		if NCY, CALL adr
-0xd5	PUSH D	1		(sp-2)<-E; (sp-1)<-D; sp <- sp - 2
-0xd6	SUI D8	2	Z, S, P, CY, AC	A <- A - data
-0xd7	RST 2	1		CALL $10
-0xd8	RC	1		if CY, RET
-0xd9	-			
-0xda	JC adr	3		if CY, PC<-adr
-0xdb	IN D8	2		special
-0xdc	CC adr	3		if CY, CALL adr
-0xdd	-			
-0xde	SBI D8	2	Z, S, P, CY, AC	A <- A - data - CY
-0xdf	RST 3	1		CALL $18
-0xe0	RPO	1		if PO, RET
-0xe1	POP H	1		L <- (sp); H <- (sp+1); sp <- sp+2
-0xe2	JPO adr	3		if PO, PC <- adr
-0xe3	XTHL	1		L <-> (SP); H <-> (SP+1)
-0xe4	CPO adr	3		if PO, CALL adr
-0xe5	PUSH H	1		(sp-2)<-L; (sp-1)<-H; sp <- sp - 2
-0xe6	ANI D8	2	Z, S, P, CY, AC	A <- A & data
-0xe7	RST 4	1		CALL $20
-0xe8	RPE	1		if PE, RET
-0xe9	PCHL	1		PC.hi <- H; PC.lo <- L
-0xea	JPE adr	3		if PE, PC <- adr
-0xeb	XCHG	1		H <-> D; L <-> E
-0xec	CPE adr	3		if PE, CALL adr
-0xed	-			
-0xee	XRI D8	2	Z, S, P, CY, AC	A <- A ^ data
-0xef	RST 5	1		CALL $28
-0xf0	RP	1		if P, RET
-0xf1	POP PSW	1		flags <- (sp); A <- (sp+1); sp <- sp+2
-0xf2	JP adr	3		if P=1 PC <- adr
-0xf3	DI	1		special
-0xf4	CP adr	3		if P, PC <- adr
-0xf5	PUSH PSW	1		(sp-2)<-flags; (sp-1)<-A; sp <- sp - 2
-0xf6	ORI D8	2	Z, S, P, CY, AC	A <- A | data
-0xf7	RST 6	1		CALL $30
-0xf8	RM	1		if M, RET
-0xf9	SPHL	1		SP=HL
-0xfa	JM adr	3		if M, PC <- adr
-0xfb	EI	1		special
-0xfc	CM adr	3		if M, CALL adr
-0xfd	-			
-0xfe	CPI D8	2	Z, S, P, CY, AC	A - data
-0xff	RST 7	1		CALL $38
+		case 0x00: 	printf("NOP"); break;		
+		case 0x01:	printf("LXI    B,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
+		case 0x02:	printf("STAX   B"); opbytes = 1; break;
+		case 0x03:	printf("INX    B"); opbytes = 1; break;
+		case 0x04:	printf("INR    B"); opbytes = 1; break;
+		case 0x05:	printf("DCR    B"); opbytes = 1; break;
+		case 0x06:	printf("MVI    B,#$%02x", codeLine[1]); opbytes = 2; break;
+		case 0x07:	printf("RLC"); opbytes = 1; break;	
+		case 0x09:	printf("DAD    B"); opbytes = 1; break;
+		case 0x0a:	printf("LDAX   B"); opbytes = 1; break;
+		case 0x0b:	printf("DCX    B"); opbytes = 1; break;
+		case 0x0c:	printf("INR    C"); opbytes = 1; break;
+		case 0x0d:	printf("DCR    C"); opbytes = 1; break;
+		case 0x0e:	printf("MVI    C,#$%02x", codeLine[1]); opbytes = 2; break;
+		case 0x0f:	printf("RRC"); opbytes = 1; break;	
+		case 0x11:	printf("LXI    D,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
+		case 0x12:	printf("STAX   D"); opbytes = 1; break;
+		case 0x13:	printf("INX    D"); opbytes = 1; break;
+		case 0x14:	printf("INR    D"); opbytes = 1; break;
+		case 0x15:	printf("DCR    D"); opbytes = 1; break;
+		case 0x16:	printf("MVI    C,#$%02x", codeLine[1]); opbytes = 2; break;
+		case 0x17:	printf("RAL"); opbytes = 1; break;	
+		case 0x19:	printf("DAD    D"); opbytes = 1; break;
+		case 0x1a:	printf("LDAX   D"); opbytes = 1; break;
+		case 0x1b:	printf("DCX    D"); opbytes = 1; break;
+		case 0x1c:	printf("INR    E"); opbytes = 1; break;
+		case 0x1d:	printf("DCR    E"); opbytes = 1; break;
+		case 0x1e:	printf("MVI    E,#$%02x", codeLine[1]); opbytes = 2; break;
+		case 0x1f:	printf("RAR"); opbytes = 1; break;	
+		case 0x21:	printf("LXI    H,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
+		case 0x22:	printf("SHLD   adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
+		case 0x23:	printf("INX    H"); opbytes = 1; break;
+		case 0x24:	printf("INR    H"); opbytes = 1; break;
+		case 0x25:	printf("DCR    H"); opbytes = 1; break;
+		case 0x26:	printf("MVI    H,#$%02x", codeLine[1]); opbytes = 2; break;
+		case 0x27:	printf("DAA"); opbytes = 1; break;	
+		case 0x29:	printf("DAD    H"); opbytes = 1; break;
+		case 0x2a:	printf("LHLD   adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
+		case 0x2b:	printf("DCX    H"); opbytes = 1; break;
+		case 0x2c:	printf("INR    L"); opbytes = 1; break;
+		case 0x2d:	printf("DCR    L"); opbytes = 1; break;
+		case 0x2e:	printf("MVI    L,#$%02x", codeLine[1]); opbytes = 2; break;
+		case 0x2f:	printf("CMA	1		A <- !A
+		case 0x31:	printf("LXI SP, D16	3		SP.hi <- byte 3, SP.lo <- byte 2
+		case 0x32:	printf("STA adr	3		(adr) <- A
+		case 0x33:	printf("INX SP	1		SP = SP + 1
+		case 0x34:	printf("INR M	1	Z, S, P, AC	(HL) <- (HL)+1
+		case 0x35:	printf("DCR M	1	Z, S, P, AC	(HL) <- (HL)-1
+		case 0x36:	printf("MVI M,D8	2		(HL) <- byte 2
+		case 0x37:	printf("STC	1	CY	CY = 1
+		case 0x39:	printf("DAD SP	1	CY	HL = HL + SP
+		case 0x3a:	printf("LDA adr	3		A <- (adr)
+		case 0x3b:	printf("DCX SP	1		SP = SP-1
+		case 0x3c:	printf("INR A	1	Z, S, P, AC	A <- A+1
+		case 0x3d:	printf("DCR A	1	Z, S, P, AC	A <- A-1
+		case 0x3e:	printf("MVI A,D8	2		A <- byte 2
+		case 0x3f:	printf("CMC	1	CY	CY=!CY
+		case 0x40:	printf("MOV B,B	1		B <- B
+		case 0x41:	printf("MOV B,C	1		B <- C
+		case 0x42:	printf("MOV B,D	1		B <- D
+		case 0x43:	printf("MOV B,E	1		B <- E
+		case 0x44:	printf("MOV B,H	1		B <- H
+		case 0x45:	printf("MOV B,L	1		B <- L
+		case 0x46:	printf("MOV B,M	1		B <- (HL)
+		case 0x47:	printf("MOV B,A	1		B <- A
+		case 0x48:	printf("MOV C,B	1		C <- B
+		case 0x49:	printf("MOV C,C	1		C <- C
+		case 0x4a:	printf("MOV C,D	1		C <- D
+		case 0x4b:	printf("MOV C,E	1		C <- E
+		case 0x4c:	printf("MOV C,H	1		C <- H
+		case 0x4d:	printf("MOV C,L	1		C <- L
+		case 0x4e:	printf("MOV C,M	1		C <- (HL)
+		case 0x4f:	printf("MOV C,A	1		C <- A
+		case 0x50:	printf("MOV D,B	1		D <- B
+		case 0x51:	printf("MOV D,C	1		D <- C
+		case 0x52:	printf("MOV D,D	1		D <- D
+		case 0x53:	printf("MOV D,E	1		D <- E
+		case 0x54:	printf("MOV D,H	1		D <- H
+		case 0x55:	printf("MOV D,L	1		D <- L
+		case 0x56:	printf("MOV D,M	1		D <- (HL)
+		case 0x57:	printf("MOV D,A	1		D <- A
+		case 0x58:	printf("MOV E,B	1		E <- B
+		case 0x59:	printf("MOV E,C	1		E <- C
+		case 0x5a:	printf("MOV E,D	1		E <- D
+		case 0x5b:	printf("MOV E,E	1		E <- E
+		case 0x5c:	printf("MOV E,H	1		E <- H
+		case 0x5d:	printf("MOV E,L	1		E <- L
+		case 0x5e:	printf("MOV E,M	1		E <- (HL)
+		case 0x5f:	printf("MOV E,A	1		E <- A
+		case 0x60:	printf("MOV H,B	1		H <- B
+		case 0x61:	printf("MOV H,C	1		H <- C
+		case 0x62:	printf("MOV H,D	1		H <- D
+		case 0x63:	printf("MOV H,E	1		H <- E
+		case 0x64:	printf("MOV H,H	1		H <- H
+		case 0x65:	printf("MOV H,L	1		H <- L
+		case 0x66:	printf("MOV H,M	1		H <- (HL)
+		case 0x67:	printf("MOV H,A	1		H <- A
+		case 0x68:	printf("MOV L,B	1		L <- B
+		case 0x69:	printf("MOV L,C	1		L <- C
+		case 0x6a:	printf("MOV L,D	1		L <- D
+		case 0x6b:	printf("MOV L,E	1		L <- E
+		case 0x6c:	printf("MOV L,H	1		L <- H
+		case 0x6d:	printf("MOV L,L	1		L <- L
+		case 0x6e:	printf("MOV L,M	1		L <- (HL)
+		case 0x6f:	printf("MOV L,A	1		L <- A
+		case 0x70:	printf("MOV M,B	1		(HL) <- B
+		case 0x71:	printf("MOV M,C	1		(HL) <- C
+		case 0x72:	printf("MOV M,D	1		(HL) <- D
+		case 0x73:	printf("MOV M,E	1		(HL) <- E
+		case 0x74:	printf("MOV M,H	1		(HL) <- H
+		case 0x75:	printf("MOV M,L	1		(HL) <- L
+		case 0x76:	printf("HLT	1		special
+		case 0x77:	printf("MOV M,A	1		(HL) <- A
+		case 0x78:	printf("MOV A,B	1		A <- B
+		case 0x79:	printf("MOV A,C	1		A <- C
+		case 0x7a:	printf("MOV A,D	1		A <- D
+		case 0x7b:	printf("MOV A,E	1		A <- E
+		case 0x7c:	printf("MOV A,H	1		A <- H
+		case 0x7d:	printf("MOV A,L	1		A <- L
+		case 0x7e:	printf("MOV A,M	1		A <- (HL)
+		case 0x7f:	printf("MOV A,A	1		A <- A
+		case 0x80:	printf("ADD B	1	Z, S, P, CY, AC	A <- A + B
+		case 0x81:	printf("ADD C	1	Z, S, P, CY, AC	A <- A + C
+		case 0x82:	printf("ADD D	1	Z, S, P, CY, AC	A <- A + D
+		case 0x83:	printf("ADD E	1	Z, S, P, CY, AC	A <- A + E
+		case 0x84:	printf("ADD H	1	Z, S, P, CY, AC	A <- A + H
+		case 0x85:	printf("ADD L	1	Z, S, P, CY, AC	A <- A + L
+		case 0x86:	printf("ADD M	1	Z, S, P, CY, AC	A <- A + (HL)
+		case 0x87:	printf("ADD A	1	Z, S, P, CY, AC	A <- A + A
+		case 0x88:	printf("ADC B	1	Z, S, P, CY, AC	A <- A + B + CY
+		case 0x89:	printf("ADC C	1	Z, S, P, CY, AC	A <- A + C + CY
+		case 0x8a:	printf("ADC D	1	Z, S, P, CY, AC	A <- A + D + CY
+		case 0x8b:	printf("ADC E	1	Z, S, P, CY, AC	A <- A + E + CY
+		case 0x8c:	printf("ADC H	1	Z, S, P, CY, AC	A <- A + H + CY
+		case 0x8d:	printf("ADC L	1	Z, S, P, CY, AC	A <- A + L + CY
+		case 0x8e:	printf("ADC M	1	Z, S, P, CY, AC	A <- A + (HL) + CY
+		case 0x8f:	printf("ADC A	1	Z, S, P, CY, AC	A <- A + A + CY
+		case 0x90:	printf("SUB B	1	Z, S, P, CY, AC	A <- A - B
+		case 0x91:	printf("SUB C	1	Z, S, P, CY, AC	A <- A - C
+		case 0x92:	printf("SUB D	1	Z, S, P, CY, AC	A <- A + D
+		case 0x93:	printf("SUB E	1	Z, S, P, CY, AC	A <- A - E
+		case 0x94:	printf("SUB H	1	Z, S, P, CY, AC	A <- A + H
+		case 0x95:	printf("SUB L	1	Z, S, P, CY, AC	A <- A - L
+		case 0x96:	printf("SUB M	1	Z, S, P, CY, AC	A <- A + (HL)
+		case 0x97:	printf("SUB A	1	Z, S, P, CY, AC	A <- A - A
+		case 0x98:	printf("SBB B	1	Z, S, P, CY, AC	A <- A - B - CY
+		case 0x99:	printf("SBB C	1	Z, S, P, CY, AC	A <- A - C - CY
+		case 0x9a:	printf("SBB D	1	Z, S, P, CY, AC	A <- A - D - CY
+		case 0x9b:	printf("SBB E	1	Z, S, P, CY, AC	A <- A - E - CY
+		case 0x9c:	printf("SBB H	1	Z, S, P, CY, AC	A <- A - H - CY
+		case 0x9d:	printf("SBB L	1	Z, S, P, CY, AC	A <- A - L - CY
+		case 0x9e:	printf("SBB M	1	Z, S, P, CY, AC	A <- A - (HL) - CY
+		case 0x9f:	printf("SBB A	1	Z, S, P, CY, AC	A <- A - A - CY
+		case 0xa0:	printf("ANA B	1	Z, S, P, CY, AC	A <- A & B
+		case 0xa1:	printf("ANA C	1	Z, S, P, CY, AC	A <- A & C
+		case 0xa2:	printf("ANA D	1	Z, S, P, CY, AC	A <- A & D
+		case 0xa3:	printf("ANA E	1	Z, S, P, CY, AC	A <- A & E
+		case 0xa4:	printf("ANA H	1	Z, S, P, CY, AC	A <- A & H
+		case 0xa5:	printf("ANA L	1	Z, S, P, CY, AC	A <- A & L
+		case 0xa6:	printf("ANA M	1	Z, S, P, CY, AC	A <- A & (HL)
+		case 0xa7:	printf("ANA A	1	Z, S, P, CY, AC	A <- A & A
+		case 0xa8:	printf("XRA B	1	Z, S, P, CY, AC	A <- A ^ B
+		case 0xa9:	printf("XRA C	1	Z, S, P, CY, AC	A <- A ^ C
+		case 0xaa:	printf("XRA D	1	Z, S, P, CY, AC	A <- A ^ D
+		case 0xab:	printf("XRA E	1	Z, S, P, CY, AC	A <- A ^ E
+		case 0xac:	printf("XRA H	1	Z, S, P, CY, AC	A <- A ^ H
+		case 0xad:	printf("XRA L	1	Z, S, P, CY, AC	A <- A ^ L
+		case 0xae:	printf("XRA M	1	Z, S, P, CY, AC	A <- A ^ (HL)
+		case 0xaf:	printf("XRA A	1	Z, S, P, CY, AC	A <- A ^ A
+		case 0xb0:	printf("ORA B	1	Z, S, P, CY, AC	A <- A | B
+		case 0xb1:	printf("ORA C	1	Z, S, P, CY, AC	A <- A | C
+		case 0xb2:	printf("ORA D	1	Z, S, P, CY, AC	A <- A | D
+		case 0xb3:	printf("ORA E	1	Z, S, P, CY, AC	A <- A | E
+		case 0xb4:	printf("ORA H	1	Z, S, P, CY, AC	A <- A | H
+		case 0xb5:	printf("ORA L	1	Z, S, P, CY, AC	A <- A | L
+		case 0xb6:	printf("ORA M	1	Z, S, P, CY, AC	A <- A | (HL)
+		case 0xb7:	printf("ORA A	1	Z, S, P, CY, AC	A <- A | A
+		case 0xb8:	printf("CMP B	1	Z, S, P, CY, AC	A - B
+		case 0xb9:	printf("CMP C	1	Z, S, P, CY, AC	A - C
+		case 0xba:	printf("CMP D	1	Z, S, P, CY, AC	A - D
+		case 0xbb:	printf("CMP E	1	Z, S, P, CY, AC	A - E
+		case 0xbc:	printf("CMP H	1	Z, S, P, CY, AC	A - H
+		case 0xbd:	printf("CMP L	1	Z, S, P, CY, AC	A - L
+		case 0xbe:	printf("CMP M	1	Z, S, P, CY, AC	A - (HL)
+		case 0xbf:	printf("CMP A	1	Z, S, P, CY, AC	A - A
+		case 0xc0:	printf("RNZ	1		if NZ, RET
+		case 0xc1:	printf("POP B	1		C <- (sp); B <- (sp+1); sp <- sp+2
+		case 0xc2:	printf("JNZ adr	3		if NZ, PC <- adr
+		case 0xc3:	printf("JMP adr	3		PC <= adr
+		case 0xc4:	printf("CNZ adr	3		if NZ, CALL adr
+		case 0xc5:	printf("PUSH B	1		(sp-2)<-C; (sp-1)<-B; sp <- sp - 2
+		case 0xc6:	printf("ADI D8	2	Z, S, P, CY, AC	A <- A + byte
+		case 0xc7:	printf("RST 0	1		CALL $0
+		case 0xc8:	printf("RZ	1		if Z, RET
+		case 0xc9:	printf("RET	1		PC.lo <- (sp); PC.hi<-(sp+1); SP <- SP+2
+		case 0xca:	printf("JZ adr	3		if Z, PC <- adr	
+		case 0xcc:	printf("CZ adr	3		if Z, CALL adr
+		case 0xcd:	printf("CALL adr	3		(SP-1)<-PC.hi;(SP-2)<-PC.lo;SP<-SP-2;PC=adr
+		case 0xce:	printf("ACI D8	2	Z, S, P, CY, AC	A <- A + data + CY
+		case 0xcf:	printf("RST 1	1		CALL $8
+		case 0xd0:	printf("RNC	1		if NCY, RET
+		case 0xd1:	printf("POP D	1		E <- (sp); D <- (sp+1); sp <- sp+2
+		case 0xd2:	printf("JNC adr	3		if NCY, PC<-adr
+		case 0xd3:	printf("OUT D8	2		special
+		case 0xd4:	printf("CNC adr	3		if NCY, CALL adr
+		case 0xd5:	printf("PUSH D	1		(sp-2)<-E; (sp-1)<-D; sp <- sp - 2
+		case 0xd6:	printf("SUI D8	2	Z, S, P, CY, AC	A <- A - data
+		case 0xd7:	printf("RST 2	1		CALL $10
+		case 0xd8:	printf("RC	1		if CY, RET
+		case 0xda:	printf("JC adr	3		if CY, PC<-adr
+		case 0xdb:	printf("IN D8	2		special
+		case 0xdc:	printf("CC adr	3		if CY, CALL adr
+		case 0xde:	printf("SBI D8	2	Z, S, P, CY, AC	A <- A - data - CY
+		case 0xdf:	printf("RST 3	1		CALL $18
+		case 0xe0:	printf("RPO	1		if PO, RET
+		case 0xe1:	printf("POP H	1		L <- (sp); H <- (sp+1); sp <- sp+2
+		case 0xe2:	printf("JPO adr	3		if PO, PC <- adr
+		case 0xe3:	printf("XTHL	1		L <-> (SP); H <-> (SP+1)
+		case 0xe4:	printf("CPO adr	3		if PO, CALL adr
+		case 0xe5:	printf("PUSH H	1		(sp-2)<-L; (sp-1)<-H; sp <- sp - 2
+		case 0xe6:	printf("ANI D8	2	Z, S, P, CY, AC	A <- A & data
+		case 0xe7:	printf("RST 4	1		CALL $20
+		case 0xe8:	printf("RPE	1		if PE, RET
+		case 0xe9:	printf("PCHL	1		PC.hi <- H; PC.lo <- L
+		case 0xea:	printf("JPE adr	3		if PE, PC <- adr
+		case 0xeb:	printf("XCHG	1		H <-> D; L <-> E
+		case 0xec:	printf("CPE adr	3		if PE, CALL adr	
+		case 0xee:	printf("XRI D8	2	Z, S, P, CY, AC	A <- A ^ data
+		case 0xef:	printf("RST 5	1		CALL $28
+		case 0xf0:	printf("RP	1		if P, RET
+		case 0xf1:	printf("POP PSW	1		flags <- (sp); A <- (sp+1); sp <- sp+2
+		case 0xf2:	printf("JP adr	3		if P=1 PC <- adr
+		case 0xf3:	printf("DI	1		special
+		case 0xf4:	printf("CP adr	3		if P, PC <- adr
+		case 0xf5:	printf("PUSH PSW	1		(sp-2)<-flags; (sp-1)<-A; sp <- sp - 2
+		case 0xf6:	printf("ORI D8	2	Z, S, P, CY, AC	A <- A | data
+		case 0xf7:	printf("RST 6	1		CALL $30
+		case 0xf8:	printf("RM	1		if M, RET
+		case 0xf9:	printf("SPHL	1		SP=HL
+		case 0xfa:	printf("JM adr	3		if M, PC <- adr
+		case 0xfb:	printf("EI	1		special
+		case 0xfc:	printf("CM adr	3		if M, CALL adr
+		case 0xfe:	printf("CPI D8	2	Z, S, P, CY, AC	A - data
+		case 0xff:	printf("RST 7	1		CALL $38
 	}
 
 	printf("\n");
