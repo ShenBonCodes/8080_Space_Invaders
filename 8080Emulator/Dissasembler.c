@@ -22,7 +22,7 @@ int main(int argc, int** argv)
 	
 	while (pc < fsize)
 	{
-		pc =+ 1;
+		pc =+ Dissasembler8080p(buffer, pc);
 	}
 	
 	return 0;
