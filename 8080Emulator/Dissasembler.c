@@ -1,6 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-int main(int argc, int** argv)
+int Dissasembler8080p(unsigned char *buffer, int pc);
+
+int main(int argc, char** argv)
 {
 	FILE *file = fopen(argv[1], "rb");
 	if (file == NULL)
@@ -8,7 +11,6 @@ int main(int argc, int** argv)
 		printf("error: Couldn't open %s\n", argv[1]);    
           	exit(1);
 	}
-
 	fseek(file, 0L, SEEK_END);
 	int fsize = ftell(file);
 	fseek(file, 0L, SEEK_SET);
@@ -22,7 +24,7 @@ int main(int argc, int** argv)
 	
 	while (pc < fsize)
 	{
-		pc =+ Dissasembler8080p(buffer, pc);
+		pc += Dissasembler8080p(buffer, pc);
 	}
 	
 	return 0;
@@ -36,7 +38,7 @@ int Dissasembler8080p(unsigned char *buffer, int pc)
 			    
 	switch (*codeLine) 
 	{
-		case 0x00: 	printf("NOP"); break;		
+		case 0x00: 	printf("NOP"); opbytes = 1; break;		
 		case 0x01:	printf("LXI    B,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
 		case 0x02:	printf("STAX   B"); opbytes = 1; break;
 		case 0x03:	printf("INX    B"); opbytes = 1; break;
@@ -81,16 +83,16 @@ int Dissasembler8080p(unsigned char *buffer, int pc)
 		case 0x2f:	printf("CMA"); opbytes = 1; break;
 		case 0x31:	printf("LXI    SP,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
 		case 0x32:	printf("STA    adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break;
-		case 0x33:	printf("INX    SP"); break;
-		case 0x34:	printf("INR    M"); break;
-		case 0x35:	printf("DCR    M"); break;
+		case 0x33:	printf("INX    SP");  opbytes = 1; break;
+		case 0x34:	printf("INR    M");  opbytes = 1; break;
+		case 0x35:	printf("DCR    M");  opbytes = 1; break;
 		case 0x36:	printf("MVI    M,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x37:	printf("STC"); opbytes = 1; break;
-		case 0x39:	printf("DAD    SP"); break;
+		case 0x39:	printf("DAD    SP"); opbytes = 1; break;
 		case 0x3a:	printf("LDA    adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break;
-		case 0x3b:	printf("DCX    SP"); break;
-		case 0x3c:	printf("INR    A"); break;
-		case 0x3d:	printf("DCR    A"); break;
+		case 0x3b:	printf("DCX    SP"); opbytes = 1; break;
+		case 0x3c:	printf("INR    A"); opbytes = 1; break;
+		case 0x3d:	printf("DCR    A"); opbytes = 1; break;
 		case 0x3e:	printf("MVI    A,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x3f:	printf("CMC"); opbytes = 1; break;
 		case 0x40:	printf("MOV    B,B"); opbytes = 1; break;
@@ -283,6 +285,6 @@ int Dissasembler8080p(unsigned char *buffer, int pc)
 	}
 
 	printf("\n");
-
+	
 	return opbytes;
 }
