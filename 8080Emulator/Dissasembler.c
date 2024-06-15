@@ -46,6 +46,7 @@ int Dissasembler8080p(unsigned char *buffer, int pc)
 		case 0x05:	printf("DCR    B"); opbytes = 1; break;
 		case 0x06:	printf("MVI    B,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x07:	printf("RLC"); opbytes = 1; break;	
+		case 0x08:	printf("NOP"); opbytes = 1; break;
 		case 0x09:	printf("DAD    B"); opbytes = 1; break;
 		case 0x0a:	printf("LDAX   B"); opbytes = 1; break;
 		case 0x0b:	printf("DCX    B"); opbytes = 1; break;
@@ -53,6 +54,7 @@ int Dissasembler8080p(unsigned char *buffer, int pc)
 		case 0x0d:	printf("DCR    C"); opbytes = 1; break;
 		case 0x0e:	printf("MVI    C,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x0f:	printf("RRC"); opbytes = 1; break;	
+		case 0x10:	printf("NOP"); opbytes = 1; break;	
 		case 0x11:	printf("LXI    D,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
 		case 0x12:	printf("STAX   D"); opbytes = 1; break;
 		case 0x13:	printf("INX    D"); opbytes = 1; break;
@@ -60,6 +62,7 @@ int Dissasembler8080p(unsigned char *buffer, int pc)
 		case 0x15:	printf("DCR    D"); opbytes = 1; break;
 		case 0x16:	printf("MVI    C,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x17:	printf("RAL"); opbytes = 1; break;	
+		case 0x18:	printf("NOP"); opbytes = 1; break;	
 		case 0x19:	printf("DAD    D"); opbytes = 1; break;
 		case 0x1a:	printf("LDAX   D"); opbytes = 1; break;
 		case 0x1b:	printf("DCX    D"); opbytes = 1; break;
@@ -67,6 +70,7 @@ int Dissasembler8080p(unsigned char *buffer, int pc)
 		case 0x1d:	printf("DCR    E"); opbytes = 1; break;
 		case 0x1e:	printf("MVI    E,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x1f:	printf("RAR"); opbytes = 1; break;	
+		case 0x20:	printf("NOP"); opbytes = 1; break;	
 		case 0x21:	printf("LXI    H,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
 		case 0x22:	printf("SHLD   adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
 		case 0x23:	printf("INX    H"); opbytes = 1; break;
@@ -74,6 +78,7 @@ int Dissasembler8080p(unsigned char *buffer, int pc)
 		case 0x25:	printf("DCR    H"); opbytes = 1; break;
 		case 0x26:	printf("MVI    H,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x27:	printf("DAA"); opbytes = 1; break;	
+		case 0x28:	printf("NOP"); opbytes = 1; break;	
 		case 0x29:	printf("DAD    H"); opbytes = 1; break;
 		case 0x2a:	printf("LHLD   adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
 		case 0x2b:	printf("DCX    H"); opbytes = 1; break;
@@ -81,6 +86,7 @@ int Dissasembler8080p(unsigned char *buffer, int pc)
 		case 0x2d:	printf("DCR    L"); opbytes = 1; break;
 		case 0x2e:	printf("MVI    L,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x2f:	printf("CMA"); opbytes = 1; break;
+		case 0x30:	printf("NOP"); opbytes = 1; break;	
 		case 0x31:	printf("LXI    SP,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
 		case 0x32:	printf("STA    adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break;
 		case 0x33:	printf("INX    SP");  opbytes = 1; break;
@@ -88,6 +94,7 @@ int Dissasembler8080p(unsigned char *buffer, int pc)
 		case 0x35:	printf("DCR    M");  opbytes = 1; break;
 		case 0x36:	printf("MVI    M,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x37:	printf("STC"); opbytes = 1; break;
+		case 0x38:	printf("NOP"); opbytes = 1; break;	
 		case 0x39:	printf("DAD    SP"); opbytes = 1; break;
 		case 0x3a:	printf("LDA    adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break;
 		case 0x3b:	printf("DCX    SP"); opbytes = 1; break;
@@ -234,6 +241,7 @@ int Dissasembler8080p(unsigned char *buffer, int pc)
 		case 0xc8:	printf("RZ"); opbytes = 1; break;
 		case 0xc9:	printf("RET"); opbytes = 1; break;
 		case 0xca:	printf("JZ     adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
+		case 0xcb:	printf("JMP    adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break;
 		case 0xcc:	printf("CZ     adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
 		case 0xcd:	printf("CALL   adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
 		case 0xce:	printf("ACI    D8,#$%02x", codeLine[1]); opbytes = 2; break;
@@ -247,9 +255,11 @@ int Dissasembler8080p(unsigned char *buffer, int pc)
 		case 0xd6:	printf("SUI    D8,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0xd7:	printf("RST,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0xd8:	printf("RC"); opbytes = 1; break;
+		case 0xd9:	printf("RET"); opbytes = 1; break;
 		case 0xda:	printf("JC     adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break;
 		case 0xdb:	printf("IN     D8,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0xdc:	printf("CC     adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break;
+		case 0xdd:	printf("CALL   adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
 		case 0xde:	printf("SBI    D8,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0xdf:	printf("RST"); opbytes = 1; break;
 		case 0xe0:	printf("RPO"); opbytes = 1; break;
@@ -265,6 +275,7 @@ int Dissasembler8080p(unsigned char *buffer, int pc)
 		case 0xea:	printf("JPE    adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break;
 		case 0xeb:	printf("XCHG"); opbytes = 1; break;
 		case 0xec:	printf("CPE    adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break;
+		case 0xed:	printf("CALL   adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
 		case 0xee:	printf("XRI    D8,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0xef:	printf("RST"); opbytes = 1; break;
 		case 0xf0:	printf("RP"); opbytes = 1; break;
@@ -280,6 +291,7 @@ int Dissasembler8080p(unsigned char *buffer, int pc)
 		case 0xfa:	printf("JM     adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break;
 		case 0xfb:	printf("EI"); opbytes = 1; break;
 		case 0xfc:	printf("CM     adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break;
+		case 0xfd:	printf("CALL   adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
 		case 0xfe:	printf("CPI    D8,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0xff:	printf("RST"); opbytes = 1; break;
 	}
