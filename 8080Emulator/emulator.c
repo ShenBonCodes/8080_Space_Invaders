@@ -33,15 +33,22 @@ int main(int argc, char** argv)
 
 int Emulate8080(State8080* state)
 {
-	unsigned char* codeLine = &buffer[pc];
-	int opbytes = 0; // size in bytes of operation
-	printf("%04x ", pc); // printing out byte # in buffer to 4 digit number
+	unsigned char* opcode = &state->memory[state->pc];
 			    
-	switch (*codeLine) 
+	switch (*opcode) 
 	{
-		case 0x00: 	printf("NOP"); opbytes = 1; break;		
-		case 0x01:	printf("LXI    B,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
-		case 0x02:	printf("STAX   B"); opbytes = 1; break;
+		case 0x00:	break;			// NOP	
+		case 0x01:				// LXI B, word
+			state->c = opcode[1];    
+			state->b = opcode[2];    
+			state->pc += 2;                  //Advance 2 more bytes    
+			break;    
+		case 0x02:
+			state->c = opcode[1];    
+			state->b = opcode[2];    
+			state->pc += 2;                  //Advance 2 more bytes    
+			break;    	
+			
 		case 0x03:	printf("INX    B"); opbytes = 1; break;
 		case 0x04:	printf("INR    B"); opbytes = 1; break;
 		case 0x05:	printf("DCR    B"); opbytes = 1; break;
