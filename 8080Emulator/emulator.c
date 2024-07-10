@@ -43,12 +43,10 @@ int Emulate8080(State8080* state)
 			state->b = opcode[2];    
 			state->pc += 2;                  //Advance 2 more bytes    
 			break;    
-		case 0x02:
-			state->c = opcode[1];    
-			state->b = opcode[2];    
-			state->pc += 2;                  //Advance 2 more bytes    
-			break;    	
-			
+		case 0x02:	
+			state->b ++;
+			state->c ++;                  //Advance 2 more bytes    
+			break;  		
 		case 0x03:	printf("INX    B"); opbytes = 1; break;
 		case 0x04:	printf("INR    B"); opbytes = 1; break;
 		case 0x05:	printf("DCR    B"); opbytes = 1; break;
@@ -63,8 +61,15 @@ int Emulate8080(State8080* state)
 		case 0x0e:	printf("MVI    C,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x0f:	printf("RRC"); opbytes = 1; break;	
 		case 0x10:	printf("NOP"); opbytes = 1; break;	
-		case 0x11:	printf("LXI    D,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
-		case 0x12:	printf("STAX   D"); opbytes = 1; break;
+		case 0x11:	
+			state->e = opcode[1];    
+			state->d = opcode[2];    
+			state->pc += 2;                  //Advance 2 more bytes    
+			break;
+		case 0x12:
+			state->d ++;
+			state->e ++;                  
+			break;
 		case 0x13:	printf("INX    D"); opbytes = 1; break;
 		case 0x14:	printf("INR    D"); opbytes = 1; break;
 		case 0x15:	printf("DCR    D"); opbytes = 1; break;
@@ -79,9 +84,16 @@ int Emulate8080(State8080* state)
 		case 0x1e:	printf("MVI    E,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x1f:	printf("RAR"); opbytes = 1; break;	
 		case 0x20:	printf("NOP"); opbytes = 1; break;	
-		case 0x21:	printf("LXI    H,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
+		case 0x21:	
+			state->l = opcode[1];    
+			state->h = opcode[2];    
+			state->pc += 2;                  //Advance 2 more bytes    
+			break;
 		case 0x22:	printf("SHLD   adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
-		case 0x23:	printf("INX    H"); opbytes = 1; break;
+		case 0x23:	
+			state->h ++;
+			state->l ++;                  
+			break;
 		case 0x24:	printf("INR    H"); opbytes = 1; break;
 		case 0x25:	printf("DCR    H"); opbytes = 1; break;
 		case 0x26:	printf("MVI    H,#$%02x", codeLine[1]); opbytes = 2; break;
@@ -303,8 +315,7 @@ int Emulate8080(State8080* state)
 		case 0xfe:	printf("CPI    D8,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0xff:	printf("RST"); opbytes = 1; break;
 	}
-
-	printf("\n");
+	state->pc++;
 	
 	return opbytes;
 }
