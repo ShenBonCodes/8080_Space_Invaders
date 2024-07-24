@@ -43,11 +43,8 @@ int Emulate8080(State8080* state)
 			state->b = opcode[2];    
 			state->pc += 2;                  //Advance 2 more bytes    
 			break;    
-		case 0x02:	
-			state->b ++;
-			state->c ++;                  //Advance 2 more bytes    
-			break;  		
-		case 0x03:	printf("INX    B"); opbytes = 1; break;
+				
+		
 		case 0x04:	printf("INR    B"); opbytes = 1; break;
 		case 0x05:	printf("DCR    B"); opbytes = 1; break;
 		case 0x06:	printf("MVI    B,#$%02x", codeLine[1]); opbytes = 2; break;
@@ -66,11 +63,18 @@ int Emulate8080(State8080* state)
 			state->d = opcode[2];    
 			state->pc += 2;                  //Advance 2 more bytes    
 			break;
-		case 0x12:
-			state->d ++;
-			state->e ++;                  
+
+		case 0x02:	// STAX B
+			state->b = state->a;
+			state->c = state->a;                  
+			break;  
+		case 0x12:	// STAX D
+			state->d = state->a;
+			state->e = state->a;                  
 			break;
-		case 0x13:	printf("INX    D"); opbytes = 1; break;
+		
+
+		
 		case 0x14:	printf("INR    D"); opbytes = 1; break;
 		case 0x15:	printf("DCR    D"); opbytes = 1; break;
 		case 0x16:	printf("MVI    C,#$%02x", codeLine[1]); opbytes = 2; break;
@@ -90,10 +94,24 @@ int Emulate8080(State8080* state)
 			state->pc += 2;                  //Advance 2 more bytes    
 			break;
 		case 0x22:	printf("SHLD   adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
-		case 0x23:	
+
+
+		case 0x03:	// INX B
+			state->b ++;
+			state->c ++;                  
+			break; 
+		case 0x13:	// INX D
+			state->d ++;
+			state->e ++;                  
+			break; 
+		case 0x23:	// INX H
 			state->h ++;
 			state->l ++;                  
 			break;
+		case 0x33:	// INX SP
+			state->sp ++;                 
+			break;
+
 		case 0x24:	printf("INR    H"); opbytes = 1; break;
 		case 0x25:	printf("DCR    H"); opbytes = 1; break;
 		case 0x26:	printf("MVI    H,#$%02x", codeLine[1]); opbytes = 2; break;
@@ -108,8 +126,8 @@ int Emulate8080(State8080* state)
 		case 0x2f:	printf("CMA"); opbytes = 1; break;
 		case 0x30:	printf("NOP"); opbytes = 1; break;	
 		case 0x31:	printf("LXI    SP,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
-		case 0x32:	printf("STA    adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break;
-		case 0x33:	printf("INX    SP");  opbytes = 1; break;
+		case 0x32:	// STAX a16                
+			break;
 		case 0x34:	printf("INR    M");  opbytes = 1; break;
 		case 0x35:	printf("DCR    M");  opbytes = 1; break;
 		case 0x36:	printf("MVI    M,#$%02x", codeLine[1]); opbytes = 2; break;
