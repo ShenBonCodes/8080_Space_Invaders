@@ -37,34 +37,36 @@ void Emulate8080(State8080* state)
 			    
 	switch (*opcode) 
 	{
-		case 0x00:	break;			// NOP	
-		case 0x10:	break;			// NOP	
-		case 0x20:	break;			// NOP	
-		case 0x30:	break;			// NOP	
-		case 0x08:	break;			// NOP	
-		case 0x18:	break;			// NOP	
-		case 0x28:	break;			// NOP	
-		case 0x38:	break;			// NOP	
+		case 0x00:	// NOP	
+		case 0x10:	// NOP	
+		case 0x20:	// NOP	
+		case 0x30:	// NOP	
+		case 0x08:	// NOP	
+		case 0x18:	// NOP	
+		case 0x28:	// NOP	
+		case 0x38:	// NOP
+			break;		
 
-		case 0x01:					// LXI B, word
+		case 0x01:	// LXI B, d16, load 16-bit immediate data into rp (B, D, H, SP)
 			state->c = opcode[1];   // little-endian, second byte is least significant 
 			state->b = opcode[2];    
-			state->pc += 2;                  //Advance 2 more bytes    
+			state->pc += 2;     
 			break;    
-		case 0x11:					// LXI D, word
+		case 0x11:	// LXI D, d16
 			state->e = opcode[1];    
 			state->d = opcode[2];    
 			state->pc += 2;                   
 			break;
-		case 0x21:					// LXI H, word
+		case 0x21:	// LXI H, d16
 			state->l = opcode[1];    
 			state->h = opcode[2];    
 			state->pc += 2;                  
 			break;
-		case 0x31:					// LXI SP, word
+		case 0x31:	// LXI SP, d16
 			// shift left 8 bits, then use OR operator to put add LSB to right hand side
 			// because 0 | x = x (x is 0 or 1), so right 8 bits will just be LSB (least significant bits)
-			state->sp = opcode[2] << 8 | opcode[1];  
+			uint16_t addr = opcode[2] << 8 | opcode[1];
+			state->sp = addr;  
 			state->pc += 2;                  
 			break;
 
@@ -85,10 +87,12 @@ void Emulate8080(State8080* state)
 									STAX B
 		will store the contents of the accumulator at memory location 3F16H. */
 		case 0x02:	// STAX B
-			state->memory[state->b << 8 | state->c] = state->a;
-			break;  
+			uint16_t addr = state->b << 8 | state->c;
+			state->memory[addr] = state->a;
+			break;
 		case 0x12:	// STAX D
-			state->memory[state->d << 8 | state->e] = state->a;            
+			uint16_t addr = state->d << 8 | state->e;	
+			state->memory[addr] = state->a;            
 			break;
 		
 		case 0x14:	printf("INR    D"); opbytes = 1; break;
@@ -104,24 +108,32 @@ void Emulate8080(State8080* state)
 		case 0x1e:	printf("MVI    E,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x1f:	printf("RAR"); opbytes = 1; break;	
 		
-		
-		case 0x22:	printf("SHLD   adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
+		case 0x22:	// SHLD, Store Hand L DirectLabel
+			uint16_t addr = opcode[1] << 8 | opcode[0];	
+			state->memory[addr] = state->l;
+			state->memory[(uint16_t)(addr + 1)] = state->h;     
+			break; 
 
+		case 0x32:	// STA a16  
+			uint16_t addr = opcode[1] << 8 | opcode[0];	
+			state->memory[addr] = state->l;
+			state->memory[(uint16_t)(addr + 1)] = state->h;               
+			break;
 
-		case 0x03:	// INX B
-			state->b ++;
-			state->c ++;                  
+		case 0x03:	// INX B, increment register pair
+			state->b++;
+			state->c++;                  
 			break; 
 		case 0x13:	// INX D
-			state->d ++;
-			state->e ++;                  
+			state->d++;
+			state->e++;                  
 			break; 
 		case 0x23:	// INX H
-			state->h ++;
-			state->l ++;                  
+			state->h++;
+			state->l++;                  
 			break;
 		case 0x33:	// INX SP
-			state->sp ++;                 
+			state->sp++;                 
 			break;
 
 		case 0x24:	printf("INR    H"); opbytes = 1; break;
@@ -138,8 +150,7 @@ void Emulate8080(State8080* state)
 		case 0x2f:	printf("CMA"); opbytes = 1; break;
 		
 		
-		case 0x32:	// STAX a16                
-			break;
+		
 		case 0x34:	printf("INR    M");  opbytes = 1; break;
 		case 0x35:	printf("DCR    M");  opbytes = 1; break;
 		case 0x36:	printf("MVI    M,#$%02x", codeLine[1]); opbytes = 2; break;
