@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "structs.h"
+#include "emulator.h"
 
-int Emulate8080(State8080* state);
+void Emulate8080(State8080* state);
 
 int main(int argc, char** argv)
 {
@@ -31,25 +31,48 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-int Emulate8080(State8080* state)
+void Emulate8080(State8080* state)
 {
 	unsigned char* opcode = &state->memory[state->pc];
 			    
 	switch (*opcode) 
 	{
 		case 0x00:	break;			// NOP	
-		case 0x01:				// LXI B, word
-			state->c = opcode[1];    
+		case 0x10:	break;			// NOP	
+		case 0x20:	break;			// NOP	
+		case 0x30:	break;			// NOP	
+		case 0x08:	break;			// NOP	
+		case 0x18:	break;			// NOP	
+		case 0x28:	break;			// NOP	
+		case 0x38:	break;			// NOP	
+
+		case 0x01:					// LXI B, word
+			state->c = opcode[1];   // little-endian, second byte is least significant 
 			state->b = opcode[2];    
 			state->pc += 2;                  //Advance 2 more bytes    
 			break;    
-				
-		
+		case 0x11:					// LXI D, word
+			state->e = opcode[1];    
+			state->d = opcode[2];    
+			state->pc += 2;                   
+			break;
+		case 0x21:					// LXI H, word
+			state->l = opcode[1];    
+			state->h = opcode[2];    
+			state->pc += 2;                  
+			break;
+		case 0x31:					// LXI SP, word
+			// shift left 8 bits, then use OR operator to put add LSB to right hand side
+			// because 0 | x = x (x is 0 or 1), so right 8 bits will just be LSB (least significant bits)
+			state->sp = opcode[2] << 8 | opcode[1];  
+			state->pc += 2;                  
+			break;
+
 		case 0x04:	printf("INR    B"); opbytes = 1; break;
 		case 0x05:	printf("DCR    B"); opbytes = 1; break;
 		case 0x06:	printf("MVI    B,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x07:	printf("RLC"); opbytes = 1; break;	
-		case 0x08:	printf("NOP"); opbytes = 1; break;
+		
 		case 0x09:	printf("DAD    B"); opbytes = 1; break;
 		case 0x0a:	printf("LDAX   B"); opbytes = 1; break;
 		case 0x0b:	printf("DCX    B"); opbytes = 1; break;
@@ -57,29 +80,22 @@ int Emulate8080(State8080* state)
 		case 0x0d:	printf("DCR    C"); opbytes = 1; break;
 		case 0x0e:	printf("MVI    C,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x0f:	printf("RRC"); opbytes = 1; break;	
-		case 0x10:	printf("NOP"); opbytes = 1; break;	
-		case 0x11:	
-			state->e = opcode[1];    
-			state->d = opcode[2];    
-			state->pc += 2;                  //Advance 2 more bytes    
-			break;
-
+		
+		/* If register B contains 3FH and register C contains 16H, the instruction: 
+									STAX B
+		will store the contents of the accumulator at memory location 3F16H. */
 		case 0x02:	// STAX B
-			state->b = state->a;
-			state->c = state->a;                  
+			state->memory[state->b << 8 | state->c] = state->a;
 			break;  
 		case 0x12:	// STAX D
-			state->d = state->a;
-			state->e = state->a;                  
+			state->memory[state->d << 8 | state->e] = state->a;            
 			break;
-		
-
 		
 		case 0x14:	printf("INR    D"); opbytes = 1; break;
 		case 0x15:	printf("DCR    D"); opbytes = 1; break;
 		case 0x16:	printf("MVI    C,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x17:	printf("RAL"); opbytes = 1; break;	
-		case 0x18:	printf("NOP"); opbytes = 1; break;	
+		
 		case 0x19:	printf("DAD    D"); opbytes = 1; break;
 		case 0x1a:	printf("LDAX   D"); opbytes = 1; break;
 		case 0x1b:	printf("DCX    D"); opbytes = 1; break;
@@ -87,12 +103,8 @@ int Emulate8080(State8080* state)
 		case 0x1d:	printf("DCR    E"); opbytes = 1; break;
 		case 0x1e:	printf("MVI    E,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x1f:	printf("RAR"); opbytes = 1; break;	
-		case 0x20:	printf("NOP"); opbytes = 1; break;	
-		case 0x21:	
-			state->l = opcode[1];    
-			state->h = opcode[2];    
-			state->pc += 2;                  //Advance 2 more bytes    
-			break;
+		
+		
 		case 0x22:	printf("SHLD   adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
 
 
@@ -116,7 +128,7 @@ int Emulate8080(State8080* state)
 		case 0x25:	printf("DCR    H"); opbytes = 1; break;
 		case 0x26:	printf("MVI    H,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x27:	printf("DAA"); opbytes = 1; break;	
-		case 0x28:	printf("NOP"); opbytes = 1; break;	
+		
 		case 0x29:	printf("DAD    H"); opbytes = 1; break;
 		case 0x2a:	printf("LHLD   adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
 		case 0x2b:	printf("DCX    H"); opbytes = 1; break;
@@ -124,15 +136,15 @@ int Emulate8080(State8080* state)
 		case 0x2d:	printf("DCR    L"); opbytes = 1; break;
 		case 0x2e:	printf("MVI    L,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x2f:	printf("CMA"); opbytes = 1; break;
-		case 0x30:	printf("NOP"); opbytes = 1; break;	
-		case 0x31:	printf("LXI    SP,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break; 
+		
+		
 		case 0x32:	// STAX a16                
 			break;
 		case 0x34:	printf("INR    M");  opbytes = 1; break;
 		case 0x35:	printf("DCR    M");  opbytes = 1; break;
 		case 0x36:	printf("MVI    M,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x37:	printf("STC"); opbytes = 1; break;
-		case 0x38:	printf("NOP"); opbytes = 1; break;	
+		
 		case 0x39:	printf("DAD    SP"); opbytes = 1; break;
 		case 0x3a:	printf("LDA    adr,#$%02x%02x", codeLine[2], codeLine[1]); opbytes = 3; break;
 		case 0x3b:	printf("DCX    SP"); opbytes = 1; break;
@@ -334,6 +346,4 @@ int Emulate8080(State8080* state)
 		case 0xff:	printf("RST"); opbytes = 1; break;
 	}
 	state->pc++;
-	
-	return opbytes;
 }
