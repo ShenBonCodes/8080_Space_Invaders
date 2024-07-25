@@ -37,12 +37,7 @@ void movRegs(uint8_t* dest, uint8_t* src)
 	*dest = *src;
 }
 
-void movRegsToMem(uint8_t* src, uint8_t* mem, uint16_t addr)
-{
-	mem[addr] = *src;
-}
-
-uint16_t getRPAddr(uint8_t* msb, uint8_t* lsb) // returns address created RP concatonation
+uint16_t getRPAddr(uint8_t* msb, uint8_t* lsb) // returns address created by register pair concatonation
 {
 	uint16_t addr = *msb << 8 | *lsb;
 	return addr;
@@ -104,12 +99,10 @@ void Emulate8080(State8080* state)
 									STAX B
 		will store the contents of the accumulator at memory location 3F16H. */
 		case 0x02:	// STAX B
-			uint16_t addr = state->b << 8 | state->c;
-			state->memory[addr] = state->a;
+			state->memory[getRPAddr(&state->b, &state->c)] = state->a;
 			break;
 		case 0x12:	// STAX D
-			uint16_t addr = state->d << 8 | state->e;	
-			state->memory[addr] = state->a;            
+			state->memory[getRPAddr(&state->d, &state->e)] = state->a;
 			break;
 		
 		case 0x14:	printf("INR    D"); opbytes = 1; break;
@@ -178,73 +171,71 @@ void Emulate8080(State8080* state)
 		case 0x3d:	printf("DCR    A"); opbytes = 1; break;
 		case 0x3e:	printf("MVI    A,#$%02x", codeLine[1]); opbytes = 2; break;
 		case 0x3f:	printf("CMC"); opbytes = 1; break;
+;
+		case 0x40:	break;
+		case 0x41:	moveRegs(&state->b, &state->c); break;
+		case 0x42:	moveRegs(&state->b, &state->d); break;
+		case 0x43:	moveRegs(&state->b, &state->e); break;
+		case 0x44:	moveRegs(&state->b, &state->h); break;
+		case 0x45:	moveRegs(&state->b, &state->l); break;
+		case 0x46:	moveRegs(&state->b, &state->memory[getRPAddr(&state->h, &state->l)]); break;
+		case 0x47:	moveRegs(&state->b, &state->a); break;
+		case 0x48:	moveRegs(&state->c, &state->b); break;
+		case 0x49:	break;
+		case 0x4a:	moveRegs(&state->c, &state->d); break;
+		case 0x4b:	moveRegs(&state->c, &state->e); break;
+		case 0x4c:	moveRegs(&state->c, &state->h); break;
+		case 0x4d:	moveRegs(&state->c, &state->l); break;
+		case 0x4e:	moveRegs(&state->c, &state->memory[getRPAddr(&state->h, &state->l)]); break;
+		case 0x4f:	moveRegs(&state->c, &state->a); break;
+		case 0x50:	moveRegs(&state->d, &state->b); break;
+		case 0x51:	moveRegs(&state->d, &state->c); break;
+		case 0x52:	break;
+		case 0x53:	moveRegs(&state->d, &state->e); break;
+		case 0x54:	moveRegs(&state->d, &state->h); break;
+		case 0x55:	moveRegs(&state->d, &state->l); break;
+		case 0x56:	moveRegs(&state->d, &state->memory[getRPAddr(&state->h, &state->l)]); break;
+		case 0x57:	moveRegs(&state->d, &state->a); break;
+		case 0x58:	moveRegs(&state->e, &state->b); break;
+		case 0x59:	moveRegs(&state->e, &state->c); break;
+		case 0x5a:	moveRegs(&state->e, &state->d); break;
+		case 0x5b:	break;
+		case 0x5c:	moveRegs(&state->e, &state->h); break;
+		case 0x5d:	moveRegs(&state->e, &state->l); break;
+		case 0x5e:	moveRegs(&state->e, &state->memory[getRPAddr(&state->h, &state->l)]); break;
+		case 0x5f:	moveRegs(&state->e, &state->a); break;
+		case 0x60:	moveRegs(&state->h, &state->b); break;
+		case 0x61:	moveRegs(&state->h, &state->c); break;
+		case 0x62:	moveRegs(&state->h, &state->d); break;
+		case 0x63:	moveRegs(&state->h, &state->e); break;
+		case 0x64:	break;
+		case 0x65:	moveRegs(&state->h, &state->l); break;
+		case 0x66:	moveRegs(&state->h, &state->memory[getRPAddr(&state->h, &state->l)]); break;
+		case 0x67:	moveRegs(&state->h, &state->a); break;
+		case 0x68:	moveRegs(&state->l, &state->b); break;
+		case 0x69:	moveRegs(&state->l, &state->c); break;
+		case 0x6a:	moveRegs(&state->l, &state->d); break;
+		case 0x6b:	moveRegs(&state->l, &state->e); break;
+		case 0x6c:	moveRegs(&state->l, &state->h); break;
+		case 0x6d:	break;
+		case 0x6e:	moveRegs(&state->l, &state->memory[getRPAddr(&state->h, &state->l)]); break;
+		case 0x6f:	moveRegs(&state->l, &state->a); break;
+		case 0x78:	moveRegs(&state->a, &state->b); break;
+		case 0x79:	moveRegs(&state->a, &state->c); break;
+		case 0x7a:	moveRegs(&state->a, &state->d); break;
+		case 0x7b:	moveRegs(&state->a, &state->e); break;
+		case 0x7c:	moveRegs(&state->a, &state->h); break;
+		case 0x7d:	moveRegs(&state->a, &state->l); break;
+		case 0x7e:	moveRegs(&state->a, &state->memory[getRPAddr(&state->h, &state->l)]); break;
+		case 0x7f:	break;
 
-		case 0x40:	moveRegs(state->b, state->b) break;
-		case 0x41:	moveRegs(state->b, state->c) break;
-		case 0x42:	moveRegs(state->b, state->d) break;
-		case 0x43:	moveRegs(state->b, state->e) break;
-		case 0x44:	moveRegs(state->b, state->h) break;
-		case 0x45:	moveRegs(state->b, state->l) break;
-		case 0x46:	moveRegs(state->b, state->memory[(uint16_t)(state->h << 8 | state->l])) break;
-		case 0x47:	moveRegs(state->b, state->a) break;
-		case 0x48:	moveRegs(state->c, state->b) break;
-		case 0x49:	moveRegs(state->c, state->c) break;
-		case 0x4a:	moveRegs(state->c, state->d) break;
-		case 0x4b:	moveRegs(state->c, state->e) break;
-		case 0x4c:	moveRegs(state->c, state->h) break;
-		case 0x4d:	moveRegs(state->c, state->l) break;
-		case 0x4e:	moveRegs(state->c,M) break;
-		case 0x4f:	moveRegs(state->c, state->a) break;
-		case 0x50:	moveRegs(state->d, state->b) break;
-		case 0x51:	moveRegs(state->d, state->c) break;
-		case 0x52:	moveRegs(state->d, state->d) break;
-		case 0x53:	moveRegs(state->d, state->e) break;
-		case 0x54:	moveRegs(state->d, state->h) break;
-		case 0x55:	moveRegs(state->d, state->l) break;
-		case 0x56:	moveRegs(state->d,M) break;
-		case 0x57:	moveRegs(state->d, state->a) break;
-		case 0x58:	moveRegs(state->e, state->b) break;
-		case 0x59:	moveRegs(state->e, state->c) break;
-		case 0x5a:	moveRegs(state->e, state->d) break;
-		case 0x5b:	moveRegs(state->e, state->e) break;
-		case 0x5c:	moveRegs(state->e, state->h) break;
-		case 0x5d:	moveRegs(state->e, state->l) break;
-		case 0x5e:	moveRegs(state->e,M) break;
-		case 0x5f:	moveRegs(state->e, state->a) break;
-		case 0x60:	moveRegs(state->h, state->b) break;
-		case 0x61:	moveRegs(state->h, state->c) break;
-		case 0x62:	moveRegs(state->h, state->d) break;
-		case 0x63:	moveRegs(state->h, state->e) break;
-		case 0x64:	moveRegs(state->h, state->h) break;
-		case 0x65:	moveRegs(state->h, state->l) break;
-		case 0x66:	moveRegs(state->h,M) break;
-		case 0x67:	moveRegs(state->h, state->a) break;
-		case 0x68:	moveRegs(state->l, state->b) break;
-		case 0x69:	moveRegs(state->l, state->c) break;
-		case 0x6a:	moveRegs(state->l, state->d) break;
-		case 0x6b:	moveRegs(state->l, state->e) break;
-		case 0x6c:	moveRegs(state->l, state->h) break;
-		case 0x6d:	moveRegs(state->l, state->l) break;
-		case 0x6e:	moveRegs(state->l,M) break;
-		case 0x6f:	moveRegs(state->l, state->a) break;
-		case 0x78:	moveRegs(state->a, state->b) break;
-		case 0x79:	moveRegs(state->a, state->c) break;
-		case 0x7a:	moveRegs(state->a, state->d) break;
-		case 0x7b:	moveRegs(state->a, state->e) break;
-		case 0x7c:	moveRegs(state->a, state->h) break;
-		case 0x7d:	moveRegs(state->a, state->l) break;
-		case 0x7e:	moveRegs(state->a,M) break;
-		case 0x7f:	moveRegs(state->a, state->a) break;
-
-		case 0x70:	M,B break;
-		case 0x71:	M,C break;
-		case 0x72:	M,D break;
-		case 0x73:	M,E break;
-		case 0x74:	M,H break;
-		case 0x75:	M,L break;
-		case 0x77:	M,A break;
-
-		
+		case 0x70:	moveRegs(&state->memory[getRPAddr(&state->h, &state->l)], &state->b); break;
+		case 0x71:	moveRegs(&state->memory[getRPAddr(&state->h, &state->l)], &state->c); break;
+		case 0x72:	moveRegs(&state->memory[getRPAddr(&state->h, &state->l)], &state->d); break;
+		case 0x73:	moveRegs(&state->memory[getRPAddr(&state->h, &state->l)], &state->e); break;
+		case 0x74:	moveRegs(&state->memory[getRPAddr(&state->h, &state->l)], &state->h); break;
+		case 0x75:	moveRegs(&state->memory[getRPAddr(&state->h, &state->l)], &state->l); break;
+		case 0x77:	moveRegs(&state->memory[getRPAddr(&state->h, &state->l)], &state->a); break;
 
 		case 0x76:	printf("HLT"); opbytes = 1; break;
 
