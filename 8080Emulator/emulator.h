@@ -18,11 +18,11 @@
     uint8_t    e;    
     uint8_t    h;    
     uint8_t    l;    
-    uint16_t    sp;    
-    uint16_t    pc;    
-    uint8_t     *memory;    
-    struct      ConditionCodes      cc;    
-    uint8_t     int_enable;    
+    uint16_t   sp;    
+    uint16_t   pc;    
+    uint8_t    *memory;    
+    struct ConditionCodes cc;    
+    uint8_t    int_enable;    
    } State8080;
 
 #endif
