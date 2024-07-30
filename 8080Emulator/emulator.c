@@ -348,13 +348,28 @@ void Emulate8080(State8080* state)
 		case 0x2e:	state->l = opcode[0]; state->pc += 1; break;	// MVI L
 		case 0x3e:	state->a = opcode[0]; state->pc += 1; break;	// MVI A
 
-		case 0x07:	// RLC
+		case 0x07:	// RLC, Rotate Accumulator Left
+			state->cc.cy = (state->a & 0x80) ? 1 : 0;
+			state->a = (state->a << 1) | state->cc.cy;
 			break;
-		case 0x0f:	// RRC
+		case 0x0f:	// RRC, Rotate Accumulator Right
+			state->cc.cy = (state->a & 0x01) ? 1 : 0;
+			state->a = (state->a >> 1) | (state->cc.cy << 7);
 			break;
-		case 0x17:	// RAL
+
+		case 0x17:	// RAL, Rotate Accumulator Left Through Carry
+			int highestOrderBit = (result & 0x80) ? 1 : 0;
+
+			state->a = state->cc.cy ? (state->a << 1) | (state->cc.cy << 7) : (state->a << 1) & (state->cc.cy << 7);
+			
+			state->cc.cy = highestOrderBit;
 			break;
-		case 0x1f:	// RAR
+		case 0x1f:	// RAR, Rotate Accumulator Right Through Carry
+			int lowestOrderBit = (result & 0x01) ? 1 : 0;
+
+			state->a = state->cc.cy ? (state->a >> 1) | (state->cc.cy << 7) : (state->a >> 1) & (state->cc.cy << 7);
+			
+			state->cc.cy = lowestOrderBit;
 			break;	
 		
 		case 0x27:	// DAA 
@@ -527,67 +542,67 @@ void Emulate8080(State8080* state)
 		case 0xbf:	printf("CMP    A");  break;
 		case 0xc0:	printf("RNZ");  break;
 		case 0xc1:	printf("POP    B");  break;
-		case 0xc2:	printf("JNZ    adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break;
-		case 0xc3:	printf("JMP    adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break;
-		case 0xc4:	printf("CNZ    adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break; 
+		case 0xc2:	printf("JNZ    adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break;
+		case 0xc3:	printf("JMP    adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break;
+		case 0xc4:	printf("CNZ    adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break; 
 		case 0xc5:	printf("PUSH   B");  break;
-		case 0xc6:	printf("ADI    D8,#$%02x", codeLine[1]); state->pc += 1; break;
+		case 0xc6:	printf("ADI    D8,#$%02x", opcode[1]); state->pc += 1; break;
 		case 0xc7:	printf("RST");  break;
 		case 0xc8:	printf("RZ");  break;
 		case 0xc9:	printf("RET");  break;
-		case 0xca:	printf("JZ     adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break; 
-		case 0xcb:	printf("JMP    adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break;
-		case 0xcc:	printf("CZ     adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break; 
-		case 0xcd:	printf("CALL   adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break; 
-		case 0xce:	printf("ACI    D8,#$%02x", codeLine[1]); state->pc += 1; break;
+		case 0xca:	printf("JZ     adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break; 
+		case 0xcb:	printf("JMP    adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break;
+		case 0xcc:	printf("CZ     adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break; 
+		case 0xcd:	printf("CALL   adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break; 
+		case 0xce:	printf("ACI    D8,#$%02x", opcode[1]); state->pc += 1; break;
 		case 0xcf:	printf("RST");  break;
 		case 0xd0:	printf("RNC");  break;
 		case 0xd1:	printf("POP    D");  break;
-		case 0xd2:	printf("JNC    adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break;
-		case 0xd3:	printf("OUT    D8,#$%02x", codeLine[1]); state->pc += 1; break;
-		case 0xd4:	printf("CNC    adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break;
+		case 0xd2:	printf("JNC    adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break;
+		case 0xd3:	printf("OUT    D8,#$%02x", opcode[1]); state->pc += 1; break;
+		case 0xd4:	printf("CNC    adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break;
 		case 0xd5:	printf("PUSH   D");  break;
-		case 0xd6:	printf("SUI    D8,#$%02x", codeLine[1]); state->pc += 1; break;
-		case 0xd7:	printf("RST,#$%02x", codeLine[1]); state->pc += 1; break;
+		case 0xd6:	printf("SUI    D8,#$%02x", opcode[1]); state->pc += 1; break;
+		case 0xd7:	printf("RST,#$%02x", opcode[1]); state->pc += 1; break;
 		case 0xd8:	printf("RC");  break;
 		case 0xd9:	printf("RET");  break;
-		case 0xda:	printf("JC     adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break;
-		case 0xdb:	printf("IN     D8,#$%02x", codeLine[1]); state->pc += 1; break;
-		case 0xdc:	printf("CC     adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break;
-		case 0xdd:	printf("CALL   adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break; 
-		case 0xde:	printf("SBI    D8,#$%02x", codeLine[1]); state->pc += 1; break;
+		case 0xda:	printf("JC     adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break;
+		case 0xdb:	printf("IN     D8,#$%02x", opcode[1]); state->pc += 1; break;
+		case 0xdc:	printf("CC     adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break;
+		case 0xdd:	printf("CALL   adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break; 
+		case 0xde:	printf("SBI    D8,#$%02x", opcode[1]); state->pc += 1; break;
 		case 0xdf:	printf("RST");  break;
 		case 0xe0:	printf("RPO");  break;
 		case 0xe1:	printf("POP    H");  break;
-		case 0xe2:	printf("JPO    adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break;
+		case 0xe2:	printf("JPO    adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break;
 		case 0xe3:	printf("XTHL");  break;
-		case 0xe4:	printf("CPO    adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break;
+		case 0xe4:	printf("CPO    adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break;
 		case 0xe5:	printf("PUSH   H");  break;
-		case 0xe6:	printf("ANI    D8,#$%02x", codeLine[1]); state->pc += 1; break;
+		case 0xe6:	printf("ANI    D8,#$%02x", opcode[1]); state->pc += 1; break;
 		case 0xe7:	printf("RST");  break;
 		case 0xe8:	printf("RPE");  break;
 		case 0xe9:	printf("PCHL");  break;
-		case 0xea:	printf("JPE    adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break;
+		case 0xea:	printf("JPE    adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break;
 		case 0xeb:	printf("XCHG");  break;
-		case 0xec:	printf("CPE    adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break;
-		case 0xed:	printf("CALL   adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break; 
-		case 0xee:	printf("XRI    D8,#$%02x", codeLine[1]); state->pc += 1; break;
+		case 0xec:	printf("CPE    adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break;
+		case 0xed:	printf("CALL   adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break; 
+		case 0xee:	printf("XRI    D8,#$%02x", opcode[1]); state->pc += 1; break;
 		case 0xef:	printf("RST");  break;
 		case 0xf0:	printf("RP");  break;
 		case 0xf1:	printf("POP    PSW");  break;
-		case 0xf2:	printf("JP     adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break;
+		case 0xf2:	printf("JP     adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break;
 		case 0xf3:	printf("DI");  break;
-		case 0xf4:	printf("CP     adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break;
+		case 0xf4:	printf("CP     adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break;
 		case 0xf5:	printf("PUSH   PSW");  break;
-		case 0xf6:	printf("ORI    D8,#$%02x", codeLine[1]); state->pc += 1; break;
+		case 0xf6:	printf("ORI    D8,#$%02x", opcode[1]); state->pc += 1; break;
 		case 0xf7:	printf("RST");  break;
 		case 0xf8:	printf("RM");  break;
 		case 0xf9:	printf("SPHL");  break;
-		case 0xfa:	printf("JM     adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break;
+		case 0xfa:	printf("JM     adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break;
 		case 0xfb:	printf("EI");  break;
-		case 0xfc:	printf("CM     adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break;
-		case 0xfd:	printf("CALL   adr,#$%02x%02x", codeLine[2], codeLine[1]); state->pc += 2; break; 
-		case 0xfe:	printf("CPI    D8,#$%02x", codeLine[1]); state->pc += 1; break;
+		case 0xfc:	printf("CM     adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break;
+		case 0xfd:	printf("CALL   adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break; 
+		case 0xfe:	printf("CPI    D8,#$%02x", opcode[1]); state->pc += 1; break;
 		case 0xff:	printf("RST");  break;
 	}
 	state->pc++;
