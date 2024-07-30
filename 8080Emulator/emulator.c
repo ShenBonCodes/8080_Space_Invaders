@@ -94,7 +94,7 @@ void update_p_flag(State8080* state, uint8_t val1, uint8_t val2)
 
 void update_c_flag(State8080* state, uint8_t val1, uint8_t val2)
 {	// set to 1 when the instruction resulted in a carry out or borrow into the high order bit
-	uint16_t result = val1 + val2;
+	uint16_t result = (uint16_t)val1 + (uint16_t)val2;
 
 	if (result > 0xff)    
 		state->cc.cy = 1;    
@@ -105,18 +105,6 @@ void update_c_flag(State8080* state, uint8_t val1, uint8_t val2)
 void movRegs(uint8_t* dest, uint8_t* src)
 {
 	*dest = *src;
-}
-
-uint16_t getRPAddr(uint8_t msb, uint8_t lsb) // returns address created by register pair concatenation
-{
-	uint16_t addr = msb << 8 | lsb;
-	return addr;
-}
-
-uint16_t getHLAddr(State8080* state) // returns address created by HL register pair concatenation
-{
-	uint16_t addr = state->h << 8 | state->l;
-	return addr;
 }
 
 void incRegOrMem(State8080* state, uint8_t val1, uint8_t val2)
@@ -133,6 +121,28 @@ void decRegOrMem(State8080* state, uint8_t val1, uint8_t val2)
 	update_z_flag(state, val1, val2);
 	update_ac_flag_sub(state, val1, -val2);
 	update_p_flag(state, val1, val2);
+}
+
+void doubleAdd(State8080* state, uint16_t val1, uint16_t val2)
+{	// not using update_c_flag func as using 16 bit addition
+	uint32_t result = (uint32_t)val1 + (uint32_t)val2;
+
+	if (result > 0xffff)    
+		state->cc.cy = 1;    
+	else    
+		state->cc.cy = 0;
+}
+
+uint16_t getRegPair(uint8_t msb, uint8_t lsb) // returns address created by register pair concatenation
+{
+	uint16_t addr = msb << 8 | lsb;
+	return addr;
+}
+
+uint16_t getHLAddr(State8080* state) // returns address created by HL register pair concatenation
+{
+	uint16_t addr = state->h << 8 | state->l;
+	return addr;
 }
 
 void Emulate8080(State8080* state)
@@ -177,18 +187,18 @@ void Emulate8080(State8080* state)
 		
 		/* STAX, store accumulator */
 		case 0x02:	// STAX B
-			state->memory[getRPAddr(state->b, state->c)] = state->a;
+			state->memory[getRegPair(state->b, state->c)] = state->a;
 			break;
 		case 0x12:	// STAX D
-			state->memory[getRPAddr(state->d, state->e)] = state->a;
+			state->memory[getRegPair(state->d, state->e)] = state->a;
 			break;
 
 		/* LDAX, load accumulator */
 		case 0x0a:	// LDAX B, load accumulator
-			state->a = state->memory[getRPAddr(state->b, state->c)];
+			state->a = state->memory[getRegPair(state->b, state->c)];
 			break; 
 		case 0x1a:	// LDAX C
-			state->a = state->memory[getRPAddr(state->d, state->e)];
+			state->a = state->memory[getRegPair(state->d, state->e)];
 			break; 
 		
 		case 0x22:	// SHLD, Store H and L to memory
@@ -219,66 +229,114 @@ void Emulate8080(State8080* state)
 
 		/* INX, increment register pair */
 		case 0x03:	// INX B 
-			state->b++;
-			state->c++;            
+			uint16_t result = (uint16_t)(getRegPair(state->b, state->c) + 1);
+			state->b = (uint8_t) result;
+			state->c = (uint8_t) (result >> 8);          
 			break; 
 		case 0x13:	// INX D
-			state->d++;
-			state->e++;                  
+			uint16_t result = (uint16_t)(getRegPair(state->d, state->e) + 1);
+			state->d = (uint8_t) result;
+			state->e = (uint8_t) (result >> 8);               
 			break; 
 		case 0x23:	// INX H
-			state->h++;
-			state->l++;                  
+			uint16_t result = (uint16_t)(getHLAddr(state) + 1);
+			state->l = (uint8_t) result;
+			state->h = (uint8_t) (result >> 8);                 
 			break;
 		case 0x33:	// INX SP
-			state->sp++;                 
+			uint16_t result = (uint16_t)(state->sp + 1);
+			state->sp = result;           
+			break;
+
+		/* DCX, Decrement register pair */
+		case 0x0b:	// DCX, B  
+			uint16_t result = (uint16_t)(getRegPair(state->b, state->c) - 1);
+			state->b = (uint8_t) result;
+			state->c = (uint8_t) (result >> 8);
+			break;
+		case 0x1b:	// DCX, D  
+			uint16_t result = (uint16_t)(getRegPair(state->d, state->e) - 1);
+			state->d = (uint8_t) result;
+			state->e = (uint8_t) (result >> 8);
+			break;
+		case 0x2b:	// DCX, H  
+			uint16_t result = (uint16_t)(getHLAddr(state) - 1);
+			state->l = (uint8_t) result;
+			state->h = (uint8_t) (result >> 8);
+			break;
+		case 0x3b:	// DCX, SP  
+			state->sp--;
 			break;
 
 		/* INR, Increment Register or Memory */
-		case 0x04:	// INR B 	
+		case 0x04:	// INR B 
 			incRegOrMem(state, state->b, 1);
+			state->b++;
 			break;
 		case 0x14:	// INR D
 			incRegOrMem(state, state->d, 1);
+			state->d++;
 			break;
 		case 0x24:	// INR H
 			incRegOrMem(state, state->h, 1);
+			state->h++;
 			break;
 		case 0x34:	// INR M
 			uint16_t addr = getHLAddr(state);
 			incRegOrMem(state, state->memory[addr], 1);
+			state->memory[addr]++;
 			break;
 		case 0x0c:	// INR C
 			incRegOrMem(state, state->c, 1);
+			state->c++;
 			break;
 		case 0x1c:	// INR E
 			incRegOrMem(state, state->e, 1);
+			state->e++;
 			break;
 		case 0x2c:	// INR L
 			incRegOrMem(state, state->l, 1);
+			state->l++;
 			break;
 		case 0x3c:	// INR A
 			incRegOrMem(state, state->a, 1);
+			state->a++;
 			break;
 
 		/* DCR, Decrement Register or Memory */
-		case 0x05:	// INR B	
-			decRegOrMem(state, state->b, -1);  break;
-		case 0x15:	// INR D	
-			decRegOrMem(state, state->d, -1);  break;
-		case 0x25:	// INR H	
-			decRegOrMem(state, state->h, -1);  break;
-		case 0x35:	// INR M	
+		case 0x05:	// DCR B	
+			decRegOrMem(state, state->b, -1);  
+			state->b--;
+			break;
+		case 0x15:	// DCR D	
+			decRegOrMem(state, state->d, -1);  
+			state->d--;
+			break;
+		case 0x25:	// DCR H	
+			decRegOrMem(state, state->h, -1);  
+			state->h--;
+			break;
+		case 0x35:	// DCR M	
 			uint16_t addr = getHLAddr(state);
-			decRegOrMem(state, state->memory[addr], -1);  break;
-		case 0x0d:	// INR C	
-			decRegOrMem(state, state->c, -1);  break;
-		case 0x1d:	// INR E	
-			decRegOrMem(state, state->e, -1);  break;
-		case 0x2d:	// INR L	
-			decRegOrMem(state, state->l, -1);  break;
-		case 0x3d:	// INR A	
-			decRegOrMem(state, state->a, -1);  break;
+			decRegOrMem(state, state->memory[addr], -1);  
+			state->memory[addr]--;
+			break;
+		case 0x0d:	// DCR C	
+			decRegOrMem(state, state->c, -1);  
+			state->c--;
+			break;
+		case 0x1d:	// DCR E	
+			decRegOrMem(state, state->e, -1); 
+			state->e--; 
+			break;
+		case 0x2d:	// DCR L	
+			decRegOrMem(state, state->l, -1);  
+			state->l--;
+			break;
+		case 0x3d:	// DCR A	
+			decRegOrMem(state, state->a, -1);  
+			state->a--;
+			break;
 		
 		/* MVI, Move Immediate Byte to Reg or Byte address*/ 
 		case 0x06:	state->b = opcode[0]; state->pc += 1; break; 	// MVI B
@@ -290,30 +348,50 @@ void Emulate8080(State8080* state)
 		case 0x2e:	state->l = opcode[0]; state->pc += 1; break;	// MVI L
 		case 0x3e:	state->a = opcode[0]; state->pc += 1; break;	// MVI A
 
-		case 0x07:	printf("RLC");  break;
-		case 0x17:	printf("RAL");  break;		
+		case 0x07:	// RLC
+			break;
+		case 0x0f:	// RRC
+			break;
+		case 0x17:	// RAL
+			break;
+		case 0x1f:	// RAR
+			break;	
 		
-		case 0x27:	printf("DAA");  break;	
+		case 0x27:	// DAA 
+			break;	
+		case 0x2f:	// CMA
+			break;
 
-		case 0x37:	printf("STC");  break;
+		case 0x37:	// STC
+			break;
+		case 0x3f:	// CMC
+			break;
 		
-		/* DAD */
-		case 0x09:	printf("DAD    B");  break;
-		case 0x19:	printf("DAD    D");  break;
-		case 0x29:	printf("DAD    H");  break;
-		case 0x39:	printf("DAD    SP"); break;
-
-		/* DCX */
-		case 0x0b:	printf("DCX    B");  break;
-		case 0x1b:	printf("DCX    D");  break;
-		case 0x2b:	printf("DCX    H");  break;
-		case 0x3b:	printf("DCX    SP");  break;
-		
-		case 0x0f:	printf("RRC");  break;
-		case 0x1f:	printf("RAR");  break;
-
-		case 0x2f:	printf("CMA");  break;
-		case 0x3f:	printf("CMC");  break;
+		/* DAD, double add, rp + HL pair, 16 bit answer stored in HL pair */
+		case 0x09:	// DAD B
+			doubleAdd(state, getRegPair(state->b, state->c), getHLAddr(state));
+			uint16_t result = getRegPair(state->b, state->c) + getHLAddr(state);
+			state->l = (uint8_t) result;
+			state->h = (uint8_t) (result >> 8);
+			break;
+		case 0x19:	// DAD D
+			doubleAdd(state, getRegPair(state->d, state->e), getHLAddr(state));
+			uint16_t result = getRegPair(state->d, state->e) + getHLAddr(state);
+			state->l = (uint8_t) result;
+			state->h = (uint8_t) (result >> 8);
+			break;
+		case 0x29:	// DAD H
+			doubleAdd(state, getHLAddr(state), getHLAddr(state));
+			uint16_t result = getHLAddr(state) << 1;
+			state->l = (uint8_t) result;
+			state->h = (uint8_t) (result >> 8);
+			break;
+		case 0x39:	// DAD SP
+			doubleAdd(state, state->sp, getHLAddr(state));
+			uint16_t result = state->sp + getHLAddr(state);
+			state->l = (uint8_t) result;
+			state->h = (uint8_t) (result >> 8);
+			break;
 
 		/* MOV */ 
 		case 0x40:	break;
