@@ -372,14 +372,17 @@ void Emulate8080(State8080* state)
 			state->cc.cy = lowestOrderBit;
 			break;	
 		
-		case 0x27:	// DAA 
+		case 0x27:	// DAA, Decimal Adjust Accumulator
 			break;	
-		case 0x2f:	// CMA
+		case 0x2f:	// CMA, Complement Accumulator
+			state->a = ~state->a;
 			break;
 
-		case 0x37:	// STC
+		case 0x37:	// STC, Set Carry (to 1)
+			state->cc.cy = 1;
 			break;
-		case 0x3f:	// CMC
+		case 0x3f:	// CMC, Complement Carry
+			state->cc.cy = state->cc.cy ? 0 : 1;
 			break;
 		
 		/* DAD, double add, rp + HL pair, 16 bit answer stored in HL pair */
