@@ -31,10 +31,9 @@ int main(int argc, char** argv)
 	return 0;
 }
 
-int parityCheck(uint8_t val1, uint8_t val2)
+int parityCheck(uint8_t result)
 {
-	uint8_t result = val1 + val2;
-	int oneCount = 0, result = 0;
+	int oneCount = 0;
 	int bit;
 
 	for(int x = 0; x < 8; x++)
@@ -50,24 +49,25 @@ int parityCheck(uint8_t val1, uint8_t val2)
 	return result;
 }
 
-void update_s_flag(State8080* state, uint8_t val1, uint8_t val2)
+void update_s_flag(State8080* state, uint8_t result) 
 {	// set to 1 when bit 7 (the most significant bit or MSB) of the math instruction is set
-	uint8_t result = val1 + val2;
-
 	if ((result & 0x80)) // == 1
 		state->cc.s = 1;
 	else
 		state->cc.s = 0;
 }
 
-void update_z_flag(State8080* state, uint8_t val1, uint8_t val2) 
+void update_z_flag(State8080* state, uint8_t result) 
 {	// set to 1 when the result is equal to zero
-	uint8_t result = val1 + val2;
-
 	if (result == 0)
 		state->cc.z = 1;
 	else
 		state->cc.z = 0;
+}
+
+void update_p_flag(State8080* state, uint8_t result)
+{	// set when the answer has even parity, clear when odd parity
+	state->cc.p = parityCheck(result);
 }
 
 void update_ac_flag_add(State8080* state, uint8_t val1, uint8_t val2)
@@ -87,19 +87,23 @@ void update_ac_flag_sub(State8080* state, uint8_t val1, uint8_t val2)
 	state->cc.ac = result & 0x10 ? 1 : 0;
 }
 
-void update_p_flag(State8080* state, uint8_t val1, uint8_t val2)
-{	// set when the answer has even parity, clear when odd parity
-	state->cc.p = parityCheck(val1, val2);
-}
-
-void update_c_flag(State8080* state, uint8_t val1, uint8_t val2)
+void update_c_flag_add(State8080* state, uint8_t val1, uint8_t val2)
 {	// set to 1 when the instruction resulted in a carry out or borrow into the high order bit
 	uint16_t result = (uint16_t)val1 + (uint16_t)val2;
 
-	if (result > 0xff)    
+	if (result > 0xff) // if there is a carry bit
 		state->cc.cy = 1;    
 	else    
 		state->cc.cy = 0;    
+}
+
+void update_c_flag_sub(State8080* state, uint8_t val1, uint8_t val2)
+{	// set to 1 when the instruction resulted in a carry out or borrow into the high order bit
+	val2 = ~val2 + 1;
+	uint16_t result = (uint16_t)val1 + (uint16_t)val2;
+
+	if (result > 0xff) // if there is a carry bit
+		state->cc.cy = 0;       
 }
 
 void movRegs(uint8_t* dest, uint8_t* src)
@@ -107,20 +111,57 @@ void movRegs(uint8_t* dest, uint8_t* src)
 	*dest = *src;
 }
 
-void incRegOrMem(State8080* state, uint8_t val1, uint8_t val2)
+void incRegOrMem(State8080* state, uint8_t* val1, uint8_t val2)
 {	
-	update_s_flag(state, val1, val2);
-	update_z_flag(state, val1, val2);
-	update_ac_flag_add(state, val1, val2);
-	update_p_flag(state, val1, val2);
+	uint8_t result = (uint8_t)*val1 + val2;
+	update_s_flag(state, result);
+	update_z_flag(state, result);
+	update_ac_flag_add(state, *val1, val2);
+	update_p_flag(state, result);
+	*val1 += val2;
 }
 
-void decRegOrMem(State8080* state, uint8_t val1, uint8_t val2)
+void decRegOrMem(State8080* state, uint8_t* val1, uint8_t val2)
 {	
-	update_s_flag(state, val1, val2);
-	update_z_flag(state, val1, val2);
-	update_ac_flag_sub(state, val1, -val2);
-	update_p_flag(state, val1, val2);
+	uint8_t result = (uint8_t)*val1 + val2;
+	update_s_flag(state, result);
+	update_z_flag(state, result);
+	update_ac_flag_sub(state, *val1, -val2);
+	update_p_flag(state, result);
+	*val1 += val2;
+}
+
+void add(State8080* state, uint8_t* val1, uint8_t val2)
+{	
+	uint8_t result = (uint8_t)*val1 + val2;
+	update_s_flag(state, result);
+	update_z_flag(state, result);
+	update_ac_flag_add(state, *val1, val2);
+	update_p_flag(state, result);
+	update_c_flag_add(state, *val1, val2);
+	*val1 = (uint8_t)(*val1 + val2);
+}
+
+void adc(State8080* state, uint8_t* val1, uint8_t val2)
+{	
+	uint8_t result = (uint8_t)*val1 + val2 + state->c;
+	update_s_flag(state, result);
+	update_z_flag(state, result);
+	update_ac_flag_add(state, *val1, val2);
+	update_p_flag(state, result);
+	update_c_flag_add(state, *val1, val2);
+	*val1 = (uint8_t)(*val1 + val2 + state->c);
+}
+
+void sub(State8080* state, uint8_t* val1, uint8_t val2)
+{	
+	uint8_t result = (uint8_t)*val1 - val2;
+	update_s_flag(state, result);
+	update_z_flag(state, result);
+	update_ac_flag_sub(state, *val1, val2);
+	update_p_flag(state, result);
+	update_c_flag_sub(state, *val1, val2);
+	*val1 = (uint8_t)(*val1 + val2);
 }
 
 void doubleAdd(State8080* state, uint16_t val1, uint16_t val2)
@@ -270,72 +311,56 @@ void Emulate8080(State8080* state)
 
 		/* INR, Increment Register or Memory */
 		case 0x04:	// INR B 
-			incRegOrMem(state, state->b, 1);
-			state->b++;
+			incRegOrMem(state, &state->b, 1);
 			break;
 		case 0x14:	// INR D
-			incRegOrMem(state, state->d, 1);
-			state->d++;
+			incRegOrMem(state, &state->d, 1);
 			break;
 		case 0x24:	// INR H
-			incRegOrMem(state, state->h, 1);
-			state->h++;
+			incRegOrMem(state, &state->h, 1);
 			break;
 		case 0x34:	// INR M
 			uint16_t addr = getHLAddr(state);
-			incRegOrMem(state, state->memory[addr], 1);
-			state->memory[addr]++;
+			incRegOrMem(state, &state->memory[addr], 1);
 			break;
 		case 0x0c:	// INR C
-			incRegOrMem(state, state->c, 1);
-			state->c++;
+			incRegOrMem(state, &state->c, 1);
 			break;
 		case 0x1c:	// INR E
-			incRegOrMem(state, state->e, 1);
-			state->e++;
+			incRegOrMem(state, &state->e, 1);
 			break;
 		case 0x2c:	// INR L
-			incRegOrMem(state, state->l, 1);
-			state->l++;
+			incRegOrMem(state, &state->l, 1);
 			break;
 		case 0x3c:	// INR A
-			incRegOrMem(state, state->a, 1);
-			state->a++;
+			incRegOrMem(state, &state->a, 1);
 			break;
 
 		/* DCR, Decrement Register or Memory */
 		case 0x05:	// DCR B	
-			decRegOrMem(state, state->b, -1);  
-			state->b--;
+			decRegOrMem(state, &state->b, -1);  
 			break;
 		case 0x15:	// DCR D	
-			decRegOrMem(state, state->d, -1);  
-			state->d--;
+			decRegOrMem(state, &state->d, -1);  
 			break;
 		case 0x25:	// DCR H	
-			decRegOrMem(state, state->h, -1);  
-			state->h--;
+			decRegOrMem(state, &state->h, -1);  
 			break;
 		case 0x35:	// DCR M	
 			uint16_t addr = getHLAddr(state);
-			decRegOrMem(state, state->memory[addr], -1);  
-			state->memory[addr]--;
+			decRegOrMem(state, &state->memory[addr], -1);  
 			break;
 		case 0x0d:	// DCR C	
-			decRegOrMem(state, state->c, -1);  
-			state->c--;
+			decRegOrMem(state, &state->c, -1);  
 			break;
 		case 0x1d:	// DCR E	
-			decRegOrMem(state, state->e, -1); 
-			state->e--; 
+			decRegOrMem(state, &state->e, -1);  
 			break;
 		case 0x2d:	// DCR L	
-			decRegOrMem(state, state->l, -1);  
-			state->l--;
+			decRegOrMem(state, &state->l, -1);  
 			break;
 		case 0x3d:	// DCR A	
-			decRegOrMem(state, state->a, -1);  
-			state->a--;
+			decRegOrMem(state, &state->a, -1);  
 			break;
 		
 		/* MVI, Move Immediate Byte to Reg or Byte address*/ 
@@ -359,20 +384,17 @@ void Emulate8080(State8080* state)
 
 		case 0x17:	// RAL, Rotate Accumulator Left Through Carry
 			int highestOrderBit = (result & 0x80) ? 1 : 0;
-
 			state->a = state->cc.cy ? (state->a << 1) | (state->cc.cy << 7) : (state->a << 1) & (state->cc.cy << 7);
-			
 			state->cc.cy = highestOrderBit;
 			break;
 		case 0x1f:	// RAR, Rotate Accumulator Right Through Carry
 			int lowestOrderBit = (result & 0x01) ? 1 : 0;
-
 			state->a = state->cc.cy ? (state->a >> 1) | (state->cc.cy << 7) : (state->a >> 1) & (state->cc.cy << 7);
-			
 			state->cc.cy = lowestOrderBit;
 			break;	
 		
 		case 0x27:	// DAA, Decimal Adjust Accumulator
+			 
 			break;	
 		case 0x2f:	// CMA, Complement Accumulator
 			state->a = ~state->a;
@@ -479,30 +501,76 @@ void Emulate8080(State8080* state)
 
 		case 0x76:	printf("HLT");  break;
 
-		case 0x80:	printf("ADD    B");  break;
-		case 0x81:	printf("ADD    C");  break;
-		case 0x82:	printf("ADD    D");  break;
-		case 0x83:	printf("ADD    E");  break;
-		case 0x84:	printf("ADD    H");  break;
-		case 0x85:	printf("ADD    L");  break;
-		case 0x86:	printf("ADD    M");  break;
-		case 0x87:	printf("ADD    A");  break;
-		case 0x88:	printf("ADC    B");  break;
-		case 0x89:	printf("ADC    C");  break;
-		case 0x8a:	printf("ADC    D");  break;
-		case 0x8b:	printf("ADC    E");  break;
-		case 0x8c:	printf("ADC    H");  break;
-		case 0x8d:	printf("ADC    L");  break;
-		case 0x8e:	printf("ADC    M");  break;
-		case 0x8f:	printf("ADC    A");  break;
-		case 0x90:	printf("SUB    B");  break;
-		case 0x91:	printf("SUB    C");  break;
-		case 0x92:	printf("SUB    D");  break;
-		case 0x93:	printf("SUB    E");  break;
-		case 0x94:	printf("SUB    H");  break;
-		case 0x95:	printf("SUB    L");  break;
-		case 0x96:	printf("SUB    M");  break;
-		case 0x97:	printf("SUB    A");  break;
+		case 0x80:	//ADD B
+			add(state, &state->a, state->b);
+			break;
+		case 0x81:	//ADD C
+			add(state, &state->a, state->c);
+			break;
+		case 0x82:	//ADD D
+			add(state, &state->a, state->d);
+			break;
+		case 0x83:	//ADD E
+			add(state, &state->a, state->e);
+			break;
+		case 0x84:	//ADD H
+			add(state, &state->a, state->h);
+			break;
+		case 0x85:	//ADD L
+			add(state, &state->a, state->l);
+			break;
+		case 0x86:	//ADD M
+			uint16_t addr = getHLAddr(state);
+			add(state, &state->a, state->memory[addr]);
+			break;
+		case 0x87:	//ADD A
+			add(state, &state->a, state->a);
+			break;
+
+		case 0x88:	// ADC B  
+			
+			break;
+		case 0x89:	// ADC C  
+			break;
+		case 0x8a:	// ADC D  
+			break;
+		case 0x8b:	// ADC E  
+			break;
+		case 0x8c:	// ADC H  
+			break;
+		case 0x8d:	// ADC L  
+			break;
+		case 0x8e:	// ADC M  
+			break;
+		case 0x8f:	// ADC A  
+			break;
+
+		case 0x90:	// SUB B
+			sub(state, &state->a, state->b);  
+			break;
+		case 0x91:	// SUB C
+			sub(state, &state->a, state->c);  
+			break;
+		case 0x92:	// SUB D
+			sub(state, &state->a, state->d);  
+			break;
+		case 0x93:	// SUB E
+			sub(state, &state->a, state->e);  
+			break;
+		case 0x94:	// SUB H
+			sub(state, &state->a, state->h);  
+			break;
+		case 0x95:	// SUB L
+			sub(state, &state->a, state->l);  
+			break;
+		case 0x96:	// SUB M
+			uint16_t addr = getHLAddr(state);
+			sub(state, &state->a, state->memory[addr]);
+			break;
+		case 0x97:	// SUB A
+			sub(state, &state->a, state->a);  
+			break;
+
 		case 0x98:	printf("SBB    B");  break;
 		case 0x99:	printf("SBB    C");  break;
 		case 0x9a:	printf("SBB    D");  break;
@@ -511,6 +579,7 @@ void Emulate8080(State8080* state)
 		case 0x9d:	printf("SBB    L");  break;
 		case 0x9e:	printf("SBB    M");  break;
 		case 0x9f:	printf("SBB    A");  break;
+
 		case 0xa0:	printf("ANA    B");  break;
 		case 0xa1:	printf("ANA    C");  break;
 		case 0xa2:	printf("ANA    D");  break;
@@ -519,6 +588,7 @@ void Emulate8080(State8080* state)
 		case 0xa5:	printf("ANA    L");  break;
 		case 0xa6:	printf("ANA    M");  break;
 		case 0xa7:	printf("ANA    A");  break;
+
 		case 0xa8:	printf("XRA    B");  break;
 		case 0xa9:	printf("XRA    C");  break;
 		case 0xaa:	printf("XRA    D");  break;
@@ -527,6 +597,7 @@ void Emulate8080(State8080* state)
 		case 0xad:	printf("XRA    L");  break;
 		case 0xae:	printf("XRA    M");  break;
 		case 0xaf:	printf("XRA    A");  break;
+
 		case 0xb0:	printf("ORA    B");  break;
 		case 0xb1:	printf("ORA    C");  break;
 		case 0xb2:	printf("ORA    D");  break;
@@ -535,6 +606,7 @@ void Emulate8080(State8080* state)
 		case 0xb5:	printf("ORA    L");  break;
 		case 0xb6:	printf("ORA    M");  break;
 		case 0xb7:	printf("ORA    A");  break;
+
 		case 0xb8:	printf("CMP    B");  break;
 		case 0xb9:	printf("CMP    C");  break;
 		case 0xba:	printf("CMP    D");  break;
@@ -543,6 +615,7 @@ void Emulate8080(State8080* state)
 		case 0xbd:	printf("CMP    L");  break;
 		case 0xbe:	printf("CMP    M");  break;
 		case 0xbf:	printf("CMP    A");  break;
+
 		case 0xc0:	printf("RNZ");  break;
 		case 0xc1:	printf("POP    B");  break;
 		case 0xc2:	printf("JNZ    adr,#$%02x%02x", opcode[2], opcode[1]); state->pc += 2; break;
