@@ -1,6 +1,8 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
 
+#define opcodeCount 0x100
+
  typedef struct ConditionCodes {    
     uint8_t    z:1;    
     uint8_t    s:1;    
