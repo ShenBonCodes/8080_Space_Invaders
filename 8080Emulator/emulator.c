@@ -213,7 +213,7 @@ void SUB(State8080* state, uint8_t* val1, uint8_t val2)
 void SBB(State8080* state, uint8_t* val1, uint8_t val2)
 {	
 	val2 += state->cc.cy;
-	uint8_t result = (uint8_t)*val1 - (uint8_t)(~val2 + 1);
+	uint8_t result = (uint8_t)*val1 + (uint8_t)(~val2 + 1);
 
 	update_s_flag(state, result);
 	update_z_flag(state, result);
@@ -314,9 +314,9 @@ void Emulate8080(State8080* state)
 
 		/* LXI, d16, load 16-bit immediate data into rp (B, D, H, SP) */
 		// little-endian, second byte is least significant 
-		case 0x01: state->c = opcode[1]; state->b = opcode[2]; 					break; 	// LXI B
-		case 0x11: state->e = opcode[1]; state->d = opcode[2];                	break; 	// LXI D, d16
-		case 0x21: state->l = opcode[1]; state->h = opcode[2];    				break;	// LXI H, d16
+		case 0x01:	state->c = opcode[1]; state->b = opcode[2]; 					break; 	// LXI B
+		case 0x11:	state->e = opcode[1]; state->d = opcode[2];                	break; 	// LXI D, d16
+		case 0x21:	state->l = opcode[1]; state->h = opcode[2];    				break;	// LXI H, d16
 			
 		case 0x31:	// LXI SP, d16
 			// shift left 8 bits, then use OR operator to put add LSB to right hand side
@@ -330,8 +330,8 @@ void Emulate8080(State8080* state)
 		case 0x12:	state->memory[getRegPair(state->d, state->e)] = state->a;	break;	// STAX D
 			
 		/* LDAX, load accumulator */
-		case 0x0a: state->a = state->memory[getRegPair(state->b, state->c)];	break;	// LDAX B
-		case 0x1a: state->a = state->memory[getRegPair(state->d, state->e)];	break;	// LDAX C
+		case 0x0a:	state->a = state->memory[getRegPair(state->b, state->c)];	break;	// LDAX B
+		case 0x1a:	state->a = state->memory[getRegPair(state->d, state->e)];	break;	// LDAX C
 			 
 		case 0x22:	// SHLD, Store H and L to memory
 			uint16_t addr = opcode[1] << 8 | opcode[0];	
@@ -397,24 +397,24 @@ void Emulate8080(State8080* state)
 			break;
 
 		/* INR, Increment Register or Memory */
-		case 0x04: incRegOrMem(state, &state->b, 1);						break;	// INR B 
-		case 0x14: incRegOrMem(state, &state->d, 1);						break;	// INR D
-		case 0x24: incRegOrMem(state, &state->h, 1);						break; 	// INR H
-		case 0x34: incRegOrMem(state, &state->memory[getHLAddr(state)], 1); break;	// INR M
-		case 0x0c: incRegOrMem(state, &state->c, 1);						break;	// INR C
-		case 0x1c: incRegOrMem(state, &state->e, 1);						break;	// INR E
-		case 0x2c: incRegOrMem(state, &state->l, 1);						break;	// INR L
-		case 0x3c: incRegOrMem(state, &state->a, 1);						break;	// INR A
+		case 0x04:	incRegOrMem(state, &state->b, 1);						break;	// INR B 
+		case 0x14:	incRegOrMem(state, &state->d, 1);						break;	// INR D
+		case 0x24:	incRegOrMem(state, &state->h, 1);						break; 	// INR H
+		case 0x34:	incRegOrMem(state, &state->memory[getHLAddr(state)], 1); break;	// INR M
+		case 0x0c:	incRegOrMem(state, &state->c, 1);						break;	// INR C
+		case 0x1c:	incRegOrMem(state, &state->e, 1);						break;	// INR E
+		case 0x2c:	incRegOrMem(state, &state->l, 1);						break;	// INR L
+		case 0x3c:	incRegOrMem(state, &state->a, 1);						break;	// INR A
 			
 		/* DCR, Decrement Register or Memory */
-		case 0x05: decRegOrMem(state, &state->b, 1);						break;	// DCR B	
-		case 0x15: decRegOrMem(state, &state->d, 1); 						break;	// DCR D	
-		case 0x25: decRegOrMem(state, &state->h, 1);  						break;	// DCR H	
-		case 0x35: decRegOrMem(state, &state->memory[getHLAddr(state)], 1); break;	// DCR M	
-		case 0x0d: decRegOrMem(state, &state->c, 1);						break;	// DCR C	
-		case 0x1d: decRegOrMem(state, &state->e, 1);  						break;	// DCR E	
-		case 0x2d: decRegOrMem(state, &state->l, 1);  						break;	// DCR L	
-		case 0x3d: decRegOrMem(state, &state->a, 1); 						break;	// DCR A	
+		case 0x05:	decRegOrMem(state, &state->b, 1);						break;	// DCR B	
+		case 0x15:	decRegOrMem(state, &state->d, 1); 						break;	// DCR D	
+		case 0x25:	decRegOrMem(state, &state->h, 1);  						break;	// DCR H	
+		case 0x35:	decRegOrMem(state, &state->memory[getHLAddr(state)], 1); break;	// DCR M	
+		case 0x0d:	decRegOrMem(state, &state->c, 1);						break;	// DCR C	
+		case 0x1d:	decRegOrMem(state, &state->e, 1);  						break;	// DCR E	
+		case 0x2d:	decRegOrMem(state, &state->l, 1);  						break;	// DCR L	
+		case 0x3d:	decRegOrMem(state, &state->a, 1); 						break;	// DCR A	
 			
 		/* MVI, Move Immediate Byte to Reg or Byte address*/ 
 		case 0x06:	state->b = opcode[0];  									break;	// MVI B
@@ -619,17 +619,17 @@ void Emulate8080(State8080* state)
 		case 0xbe:	CMP(state, &state->a, state->memory[getHLAddr(state)]);	break;	// CMP M
 		case 0xbf:	CMP(state, &state->a, state->a);  						break;	// CMP A
 
-		case 0xc6:	printf("ADI    D8,#$%02x", opcode[1]);  break;
-		case 0xce:	printf("ACI    D8,#$%02x", opcode[1]);  break;
-		
-		case 0xd6:	printf("SUI    D8,#$%02x", opcode[1]);  break;
-		case 0xde:	printf("SBI    D8,#$%02x", opcode[1]);  break;
+		case 0xc6:	ADD(state, &state->a, opcode[0]);						break;	//ADI    
+		case 0xce: 	ADC(state, &state->a, opcode[0]);						break;	//ACI   
 
-		case 0xe6:	printf("ANI    D8,#$%02x", opcode[1]);  break;
-		case 0xee:	printf("XRI    D8,#$%02x", opcode[1]);  break;
+		case 0xd6: 	SUB(state, &state->a, opcode[0]);						break;	//SUI    
+		case 0xde: 	SBB(state, &state->a, opcode[0]);						break;	//SBI   
 
-		case 0xf6:	printf("ORI    D8,#$%02x", opcode[1]);  break;
-		case 0xfe:	printf("CPI    D8,#$%02x", opcode[1]);  break;
+		case 0xe6:	ANA(state, &state->a, opcode[0]);						break;	//ANI    
+		case 0xee:	XRA(state, &state->a, opcode[0]);						break;	//XRI    
+
+		case 0xf6:	ORA(state, &state->a, opcode[0]);						break;	//ORI    
+		case 0xfe:	CMP(state, &state->a, opcode[0]);						break;	//CPI    
 
 		case 0xc0:	printf("RNZ");  break;
 		case 0xd0:	printf("RNC");  break;
@@ -658,7 +658,7 @@ void Emulate8080(State8080* state)
 		case 0xd5:	printf("PUSH   D");  break;
 		case 0xe5:	printf("PUSH   H");  break;
 		case 0xf5:	printf("PUSH   PSW");  break;
-		
+
 		case 0xc7:	printf("RST");  break;
 		case 0xcf:	printf("RST");  break;
 		case 0xd7:	printf("RST,#$%02x", opcode[1]);  break;
