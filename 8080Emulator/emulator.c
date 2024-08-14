@@ -272,6 +272,40 @@ void CMP(State8080* state, uint8_t* val1, uint8_t val2)
 	update_ac_flag_sub(state, *val1, val2, 0);
 }
 
+
+/* pop stack to Register Pair */
+void popStackToRP(State8080* state, uint8_t* msb, uint8_t* lsb)
+{
+	*msb = state->memory[(uint16_t)(state->sp + 1)];
+	*lsb = state->memory[state->sp];
+	state->sp += 2;
+}
+
+
+/* pop stack to program counter */
+void popStackToPC(State8080* state)
+{
+	state->pc = (uint16_t)(state->memory[(uint16_t)(state->sp + 1)] << 8) | state->memory[state->sp];
+	state->sp += 2;
+}
+
+/* return from subroutine */
+void retFromSubroutine(State8080* state, int isFlagSet, int isOpCodeNot)
+{
+	if (isFlagSet == 2)
+	{
+		popStack(state);
+	}
+	else if (isOpCodeNot && !isFlagSet) // return if not and reg = 0
+	{
+		popStack(state);
+	} 
+	else if (!isOpCodeNot && isFlagSet) // return if !not and reg = 1
+	{
+		popStack(state);
+	} 
+}
+
 void doubleAdd(State8080* state, uint16_t val1, uint16_t val2)
 {	// not using update_c_flag func as using 16 bit addition
 	uint32_t result = (uint32_t)val1 + (uint32_t)val2;
@@ -619,32 +653,52 @@ void Emulate8080(State8080* state)
 		case 0xbe:	CMP(state, &state->a, state->memory[getHLAddr(state)]);	break;	// CMP M
 		case 0xbf:	CMP(state, &state->a, state->a);  						break;	// CMP A
 
-		case 0xc6:	ADD(state, &state->a, opcode[0]);						break;	//ADI    
-		case 0xce: 	ADC(state, &state->a, opcode[0]);						break;	//ACI   
+		case 0xc6:	ADD(state, &state->a, opcode[0]);						break;	//	ADI    
+		case 0xce: 	ADC(state, &state->a, opcode[0]);						break;	//	ACI   
 
-		case 0xd6: 	SUB(state, &state->a, opcode[0]);						break;	//SUI    
-		case 0xde: 	SBB(state, &state->a, opcode[0]);						break;	//SBI   
+		case 0xd6: 	SUB(state, &state->a, opcode[0]);						break;	//	SUI    
+		case 0xde: 	SBB(state, &state->a, opcode[0]);						break;	//	SBI   
 
-		case 0xe6:	ANA(state, &state->a, opcode[0]);						break;	//ANI    
-		case 0xee:	XRA(state, &state->a, opcode[0]);						break;	//XRI    
+		case 0xe6:	ANA(state, &state->a, opcode[0]);						break;	//	ANI    
+		case 0xee:	XRA(state, &state->a, opcode[0]);						break;	//	XRI    
 
-		case 0xf6:	ORA(state, &state->a, opcode[0]);						break;	//ORI    
-		case 0xfe:	CMP(state, &state->a, opcode[0]);						break;	//CPI    
+		case 0xf6:	ORA(state, &state->a, opcode[0]);						break;	//	ORI    
+		case 0xfe:	CMP(state, &state->a, opcode[0]);						break;	//	CPI    
 
-		case 0xc0:	printf("RNZ");  break;
-		case 0xd0:	printf("RNC");  break;
-		case 0xe0:	printf("RPO");  break;
-		case 0xf0:	printf("RP");  break;
+		case 0xc9:	
+		case 0xd9:	retFromSubroutine(state, 2, 0);					break;	// RET
 
-		case 0xc1:	printf("POP    B");  break;
-		case 0xd1:	printf("POP    D");  break;
-		case 0xe1:	printf("POP    H");  break;
-		case 0xf1:	printf("POP    PSW");  break;
+		case 0xc8:	retFromSubroutine(state, 0, state->cc.z);					break;	//	RZ
+		case 0xd8:	retFromSubroutine(state, 0, state->cc.cy);					break;	//	RC
+		case 0xe8:	retFromSubroutine(state, 0, state->cc.p);					break;	//	RPE
+		case 0xf8:	retFromSubroutine(state, 0, state->cc.s);					break;	//	RM	
+
+		case 0xc0:	retFromSubroutine(state, 1, state->cc.z);					break;	//	RNZ
+		case 0xd0:	retFromSubroutine(state, 1, state->cc.cy);					break;	//	RNC
+		case 0xe0:	retFromSubroutine(state, 1, state->cc.p);					break;	//	RPO
+		case 0xf0:	retFromSubroutine(state, 1, state->cc.s);					break;	//	RP
+
+		case 0xc1:	popStackToRP(state, &state->b, &state->c);  				break;	//	POP	B
+		case 0xd1:	popStackToRP(state, &state->d, &state->e);  				break;	//	POP	D
+		case 0xe1:	popStackToRP(state, &state->h, &state->l);  				break;	//	POP	H
+		case 0xf1:	
+			state->a = state->memory[(uint16_t)(state->sp + 1)];
+		break;	// POP PSW
+
+		case 0xc5:	printf("PUSH   B");  break;
+		case 0xd5:	printf("PUSH   D");  break;
+		case 0xe5:	printf("PUSH   H");  break;
+		case 0xf5:	printf("PUSH   PSW");  break;
 
 		case 0xc2:	printf("JNZ    adr,#$%02x%02x", opcode[2], opcode[1]);  break;
 		case 0xd2:	printf("JNC    adr,#$%02x%02x", opcode[2], opcode[1]);  break;
 		case 0xe2:	printf("JPO    adr,#$%02x%02x", opcode[2], opcode[1]);  break;
 		case 0xf2:	printf("JP     adr,#$%02x%02x", opcode[2], opcode[1]);  break;
+
+		case 0xca:	printf("JZ     adr,#$%02x%02x", opcode[2], opcode[1]);  break; 
+		case 0xda:	printf("JC     adr,#$%02x%02x", opcode[2], opcode[1]);  break;
+		case 0xea:	printf("JPE    adr,#$%02x%02x", opcode[2], opcode[1]);  break;
+		case 0xfa:	printf("JM     adr,#$%02x%02x", opcode[2], opcode[1]);  break;
 
 		case 0xc3:
 		case 0xcb:	printf("JMP    adr,#$%02x%02x", opcode[2], opcode[1]);  break;
@@ -654,10 +708,12 @@ void Emulate8080(State8080* state)
 		case 0xe4:	printf("CPO    adr,#$%02x%02x", opcode[2], opcode[1]);  break;
 		case 0xf4:	printf("CP     adr,#$%02x%02x", opcode[2], opcode[1]);  break;
 
-		case 0xc5:	printf("PUSH   B");  break;
-		case 0xd5:	printf("PUSH   D");  break;
-		case 0xe5:	printf("PUSH   H");  break;
-		case 0xf5:	printf("PUSH   PSW");  break;
+		case 0xcc:	printf("CZ     adr,#$%02x%02x", opcode[2], opcode[1]);  break; 
+		case 0xdc:	printf("CC     adr,#$%02x%02x", opcode[2], opcode[1]);  break;
+		case 0xec:	printf("CPE    adr,#$%02x%02x", opcode[2], opcode[1]);  break;
+		case 0xfc:	printf("CM     adr,#$%02x%02x", opcode[2], opcode[1]);  break;
+
+		
 
 		case 0xc7:	printf("RST");  break;
 		case 0xcf:	printf("RST");  break;
@@ -668,28 +724,12 @@ void Emulate8080(State8080* state)
 		case 0xf7:	printf("RST");  break;
 		case 0xff:	printf("RST");  break;
 
-		case 0xc8:	printf("RZ");  break;
-		case 0xd8:	printf("RC");  break;
-		case 0xe8:	printf("RPE");  break;
-		case 0xf8:	printf("RM");  break;
-
-		case 0xc9:	
-		case 0xd9:	printf("RET");  break;
-
-		case 0xca:	printf("JZ     adr,#$%02x%02x", opcode[2], opcode[1]);  break; 
-		case 0xda:	printf("JC     adr,#$%02x%02x", opcode[2], opcode[1]);  break;
-		case 0xea:	printf("JPE    adr,#$%02x%02x", opcode[2], opcode[1]);  break;
-		case 0xfa:	printf("JM     adr,#$%02x%02x", opcode[2], opcode[1]);  break;
+		
 		
 		case 0xcd:	
 		case 0xdd:	
 		case 0xed:	
 		case 0xfd:	printf("CALL   adr,#$%02x%02x", opcode[2], opcode[1]);  break; 
-
-		case 0xcc:	printf("CZ     adr,#$%02x%02x", opcode[2], opcode[1]);  break; 
-		case 0xdc:	printf("CC     adr,#$%02x%02x", opcode[2], opcode[1]);  break;
-		case 0xec:	printf("CPE    adr,#$%02x%02x", opcode[2], opcode[1]);  break;
-		case 0xfc:	printf("CM     adr,#$%02x%02x", opcode[2], opcode[1]);  break;
 		
 		case 0xd3:	printf("OUT    D8,#$%02x", opcode[1]);  break;
 		case 0xdb:	printf("IN     D8,#$%02x", opcode[1]);  break;
