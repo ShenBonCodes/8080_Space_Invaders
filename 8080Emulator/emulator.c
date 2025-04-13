@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "emulator.h"
+#include <cstdint>
 
 void Emulate8080(State8080* state);
 
@@ -50,6 +51,7 @@ int main(int argc, char** argv)
 		printf("error: Couldn't open %s\n", argv[1]);    
           	exit(1);
 	}
+
 	fseek(file, 0L, SEEK_END);
 	int fsize = ftell(file);
 	fseek(file, 0L, SEEK_SET);
