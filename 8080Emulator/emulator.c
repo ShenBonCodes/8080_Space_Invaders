@@ -274,7 +274,6 @@ void CMP(State8080* state, uint8_t* val1, uint8_t val2)
 	update_ac_flag_sub(state, *val1, val2, 0);
 }
 
-
 /* pop stack to Register Pair */
 void popStackToRP(State8080* state, uint8_t* msb, uint8_t* lsb)
 {
@@ -283,13 +282,29 @@ void popStackToRP(State8080* state, uint8_t* msb, uint8_t* lsb)
 	state->sp += 2;
 }
 
+/* pop stack to accumulator and set flags*/
+void popStackToAC(State8080* state)
+{
+	uint16_t SPMemData = state->memory[(uint16_t)(state->sp)];
 
-/* pop stack to program counter */
+	state->a = state->memory[(uint16_t)(state->sp + 1)];
+
+	state->cc.s = ((SPMemData & 0x80) >> 7); 	// get value of 8th bit
+	state->cc.z = ((SPMemData & 0x40) >> 6); 	// get value of 7th bit
+	state->cc.ac = ((SPMemData & 0x10) >> 4); 	// get value of 5th bit
+	state->cc.p = ((SPMemData & 0x04) >> 2); 	// get value of 3rd bit
+	state->cc.cy = ((SPMemData & 0x01)); 		// get value of 1st bit
+	
+	//state->pc = (uint16_t)(state->memory[(uint16_t)(state->sp + 1)] << 8) | state->memory[state->sp];
+	state->sp += 2;
+}
+
+/* pop stack to program counter 
 void popStackToPC(State8080* state)
 {
 	state->pc = (uint16_t)(state->memory[(uint16_t)(state->sp + 1)] << 8) | state->memory[state->sp];
 	state->sp += 2;
-}
+}*/
 
 /* return from subroutine */
 void retFromSubroutine(State8080* state, int isFlagSet, int isOpCodeNot)
@@ -485,6 +500,7 @@ void Emulate8080(State8080* state)
 		case 0x27:	// DAA, Decimal Adjust Accumulator
 			 
 			break;	
+
 		case 0x2f: state->a = ~state->a; 									break;	// CMA, Complement Accumulator
 
 		case 0x37: state->cc.cy = 1;										break;	// STC, Set Carry (to 1)
@@ -668,24 +684,23 @@ void Emulate8080(State8080* state)
 		case 0xfe:	CMP(state, &state->a, opcode[0]);						break;	//	CPI    
 
 		case 0xc9:	
-		case 0xd9:	retFromSubroutine(state, 2, 0);					break;	// RET
+		case 0xd9:	retFromSubroutine(state, 2, 0);							break;	// RET
 
-		case 0xc8:	retFromSubroutine(state, 0, state->cc.z);					break;	//	RZ
-		case 0xd8:	retFromSubroutine(state, 0, state->cc.cy);					break;	//	RC
-		case 0xe8:	retFromSubroutine(state, 0, state->cc.p);					break;	//	RPE
-		case 0xf8:	retFromSubroutine(state, 0, state->cc.s);					break;	//	RM	
+		case 0xc8:	retFromSubroutine(state, 0, state->cc.z);				break;	//	RZ
+		case 0xd8:	retFromSubroutine(state, 0, state->cc.cy);				break;	//	RC
+		case 0xe8:	retFromSubroutine(state, 0, state->cc.p);				break;	//	RPE
+		case 0xf8:	retFromSubroutine(state, 0, state->cc.s);				break;	//	RM	
 
-		case 0xc0:	retFromSubroutine(state, 1, state->cc.z);					break;	//	RNZ
-		case 0xd0:	retFromSubroutine(state, 1, state->cc.cy);					break;	//	RNC
-		case 0xe0:	retFromSubroutine(state, 1, state->cc.p);					break;	//	RPO
-		case 0xf0:	retFromSubroutine(state, 1, state->cc.s);					break;	//	RP
+		case 0xc0:	retFromSubroutine(state, 1, state->cc.z);				break;	//	RNZ
+		case 0xd0:	retFromSubroutine(state, 1, state->cc.cy);				break;	//	RNC
+		case 0xe0:	retFromSubroutine(state, 1, state->cc.p);				break;	//	RPO
+		case 0xf0:	retFromSubroutine(state, 1, state->cc.s);				break;	//	RP
 
-		case 0xc1:	popStackToRP(state, &state->b, &state->c);  				break;	//	POP	B
-		case 0xd1:	popStackToRP(state, &state->d, &state->e);  				break;	//	POP	D
-		case 0xe1:	popStackToRP(state, &state->h, &state->l);  				break;	//	POP	H
-		case 0xf1:	
-			state->a = state->memory[(uint16_t)(state->sp + 1)];
-		break;	// POP PSW
+		case 0xc1:	popStackToRP(state, &state->b, &state->c);  			break;	//	POP	B
+		case 0xd1:	popStackToRP(state, &state->d, &state->e);  			break;	//	POP	D
+		case 0xe1:	popStackToRP(state, &state->h, &state->l);  			break;	//	POP	H
+		
+		case 0xf1:	popStackToAC(state);									break;	// 	POP PSW
 
 		case 0xc5:	printf("PUSH   B");  break;
 		case 0xd5:	printf("PUSH   D");  break;

@@ -4,12 +4,12 @@
 #define opcodeCount 0x100
 
  typedef struct ConditionCodes {    
-    uint8_t    z:1;    
-    uint8_t    s:1;    
-    uint8_t    p:1;    
-    uint8_t    cy:1;    
-    uint8_t    ac:1;    
-    uint8_t    pad:3;    
+    uint8_t    z:1;     // state of sign bit
+    uint8_t    s:1;     // state of zero bit
+    uint8_t    p:1;     // parity bit
+    uint8_t    cy:1;    // carry bit 
+    uint8_t    ac:1;    // state of auxilary carry bit
+    uint8_t    pad:3;   // state of parity bit
    } ConditionCodes;    
 
    typedef struct State8080 {    
