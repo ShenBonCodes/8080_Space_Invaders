@@ -299,6 +299,81 @@ void popStackToAC(State8080* state)
 	state->sp += 2;
 }
 
+/* push Register Pair to stack */
+void pushRPToStack(State8080* state, uint8_t* msb, uint8_t* lsb)
+{
+	state->memory[(uint16_t)(state->sp - 1)] = *msb;
+	state->memory[(uint16_t)(state->sp - 2)] = *lsb;
+	state->sp -= 2;
+}
+
+/* pop stack to accumulator and set flags*/
+void pushACToStack(State8080* state)
+{
+	uint16_t SPMemData = state->memory[(uint16_t)(state->sp)];
+
+	state->memory[(uint16_t)(state->sp - 1)] = state->a;
+
+	uint8_t flags = 0;
+
+	flags |= (state->cc.s & 1) << 7;			// sets value of 8th bit						
+	flags |= (state->cc.z & 1) << 6;			// sets value of 7th bit				
+	flags |= (state->cc.ac & 1) << 4;			// sets value of 5th bit				
+	flags |= (state->cc.p & 1) << 2;			// sets value of 3rd bit				
+	flags |= 1 << 1;						    // sets value of 2nd bit	
+	flags |= (state->cc.cy & 1) << 0;			// sets value of 1st bit				
+	
+	state->sp -= 2;
+}
+
+void JNZ(State8080* state, unsigned char* opcode)
+{
+	if (state->cc.z == 0) state->pc = (opcode[2] << 8) | opcode[1];
+	else state->pc += 2;
+}
+
+void JZ(State8080* state, unsigned char* opcode)
+{
+	if (state->cc.z  == 1) state->pc = (opcode[2] << 8) | opcode[1];
+	else state->pc += 2;
+}
+
+void JNC(State8080* state, unsigned char* opcode)
+{
+	if (state->cc.cy == 0) state->pc = (opcode[2] << 8) | opcode[1];
+	else state->pc += 2;
+}
+
+void JC(State8080* state, unsigned char* opcode)
+{
+	if (state->cc.cy  == 1) state->pc = (opcode[2] << 8) | opcode[1];
+	else state->pc += 2;
+}
+
+void JPO(State8080* state, unsigned char* opcode)
+{
+	if (state->cc.p == 0) state->pc = (opcode[2] << 8) | opcode[1];
+	else state->pc += 2;
+}
+
+void JPE(State8080* state, unsigned char* opcode)
+{
+	if (state->cc.p == 1) state->pc = (opcode[2] << 8) | opcode[1];
+	else state->pc += 2;
+}
+
+void JP(State8080* state, unsigned char* opcode)
+{
+	if (state->cc.p == 0) state->pc = (opcode[2] << 8) | opcode[1];
+	else state->pc += 2;
+}
+
+void JM(State8080* state, unsigned char* opcode)
+{
+	if (state->cc.p == 1) state->pc = (opcode[2] << 8) | opcode[1];
+	else state->pc += 2;
+}
+
 /* pop stack to program counter 
 void popStackToPC(State8080* state)
 {
@@ -365,7 +440,7 @@ void Emulate8080(State8080* state)
 
 		/* LXI, d16, load 16-bit immediate data into rp (B, D, H, SP) */
 		// little-endian, second byte is least significant 
-		case 0x01:	state->c = opcode[1]; state->b = opcode[2]; 					break; 	// LXI B
+		case 0x01:	state->c = opcode[1]; state->b = opcode[2]; 				break; 	// LXI B
 		case 0x11:	state->e = opcode[1]; state->d = opcode[2];                	break; 	// LXI D, d16
 		case 0x21:	state->l = opcode[1]; state->h = opcode[2];    				break;	// LXI H, d16
 			
@@ -699,26 +774,23 @@ void Emulate8080(State8080* state)
 		case 0xc1:	popStackToRP(state, &state->b, &state->c);  			break;	//	POP	B
 		case 0xd1:	popStackToRP(state, &state->d, &state->e);  			break;	//	POP	D
 		case 0xe1:	popStackToRP(state, &state->h, &state->l);  			break;	//	POP	H
-		
 		case 0xf1:	popStackToAC(state);									break;	// 	POP PSW
 
-		case 0xc5:	printf("PUSH   B");  break;
-		case 0xd5:	printf("PUSH   D");  break;
-		case 0xe5:	printf("PUSH   H");  break;
-		case 0xf5:	printf("PUSH   PSW");  break;
+		case 0xc5:	pushRPToStack(state, &state->b, &state->c);				break;	// PUSH B  
+		case 0xd5:	pushRPToStack(state, &state->d, &state->e);				break;	// PUSH D  
+		case 0xe5:	pushRPToStack(state, &state->h, &state->l);				break;	// PUSH H  
+		case 0xf5:	pushACToStack(state); 									break;	// PUSH PSW
 
-		case 0xc2:	printf("JNZ    adr,#$%02x%02x", opcode[2], opcode[1]);  break;
-		case 0xd2:	printf("JNC    adr,#$%02x%02x", opcode[2], opcode[1]);  break;
-		case 0xe2:	printf("JPO    adr,#$%02x%02x", opcode[2], opcode[1]);  break;
-		case 0xf2:	printf("JP     adr,#$%02x%02x", opcode[2], opcode[1]);  break;
-
-		case 0xca:	printf("JZ     adr,#$%02x%02x", opcode[2], opcode[1]);  break; 
-		case 0xda:	printf("JC     adr,#$%02x%02x", opcode[2], opcode[1]);  break;
-		case 0xea:	printf("JPE    adr,#$%02x%02x", opcode[2], opcode[1]);  break;
-		case 0xfa:	printf("JM     adr,#$%02x%02x", opcode[2], opcode[1]);  break;
-
+		case 0xc2:	JNZ(state, opcode);  						break;	// JNZ
+		case 0xd2:	JNC(state, opcode);  						break;	// JNC
+		case 0xe2:	JPO(state, opcode);  						break;	// JPO
+		case 0xf2:	JP(state, opcode);  						break;	// JP 
+		case 0xca:	JZ(state, opcode);  						break;	// JZ  
+		case 0xda:	JC(state, opcode);  						break;	// JC 
+		case 0xea:	JPE(state, opcode);  						break;	// JPE
+		case 0xfa:	JM(state, opcode);  						break;	// JM 
 		case 0xc3:
-		case 0xcb:	printf("JMP    adr,#$%02x%02x", opcode[2], opcode[1]);  break;
+		case 0xcb:	JMP(state, opcode[1]);  					break; //JMP    
 
 		case 0xc4:	printf("CNZ    adr,#$%02x%02x", opcode[2], opcode[1]);  break; 
 		case 0xd4:	printf("CNC    adr,#$%02x%02x", opcode[2], opcode[1]);  break;
